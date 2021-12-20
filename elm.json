@@ -16,7 +16,8 @@
             "elm/svg": "1.0.1",
             "elm/url": "1.0.0",
             "elm-community/typed-svg": "7.0.0",
-            "mdgriffith/elm-ui": "1.1.8"
+            "mdgriffith/elm-ui": "1.1.8",
+            "rtfeldman/elm-hex": "1.0.0"
         },
         "indirect": {
             "MartinSStewart/elm-serialize": "1.2.6",
@@ -44,7 +45,6 @@
             "miniBill/elm-unicode": "1.0.2",
             "noahzgordon/elm-color-extra": "1.0.2",
             "robinheghan/murmur3": "1.0.0",
-            "rtfeldman/elm-hex": "1.0.0",
             "stil4m/elm-syntax": "7.2.8",
             "stil4m/structured-writer": "1.0.3",
             "tripokey/elm-fuzzy": "5.2.1",

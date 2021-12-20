@@ -9,6 +9,7 @@ import Simple.Animation.Property as P
 import Svg exposing (Svg)
 import Svg.Attributes exposing (..)
 import Utils.Animated as Animated
+import Hex
 
 
 
@@ -34,19 +35,32 @@ offset percent =
 -- Progress Wheel
 
 
-progress : Int -> Element msg
-progress percent =
+progress : Int -> Element.Color -> Element msg
+progress percent c =
     Element.el [ Element.width Element.fill ]
         (Element.html
             (Svg.svg [ width "100%", viewBox_ ]
-                [ progressCircle percent
+                [ progressCircle percent (toHexCode c)
                 ]
             )
         )
 
+toHexCode c =
+    Element.toRgb c |> (\rgb -> String.concat
+        [ "#"
+        , rgb.red |> to255 |> Hex.toString |> add0
+        , rgb.green |> to255 |> Hex.toString |> add0
+        , rgb.blue |> to255 |> Hex.toString |> add0
+        ])
 
-progressCircle : Int -> Svg msg
-progressCircle percent =
+to255 val =
+    if val == 1.0 then 255 else val * 256.0 |> floor
+
+add0 s =
+    if String.length s < 2 then "0" ++ s else s
+
+progressCircle : Int -> String -> Svg msg
+progressCircle percent hexColor =
     Svg.g
         [ transform "rotate(90)"
         , style originCenter
@@ -62,13 +76,13 @@ progressCircle percent =
             []
         , Animated.circle (animateProgressLine percent)
             [ fill "none"
-            , stroke "#dc2626"
+            , stroke hexColor
             , strokeLinecap "round"
             , strokeDasharray (String.fromFloat circumference)
             , cx "60"
             , cy "60"
             , r (String.fromFloat radius)
-            , strokeWidth_
+            , strokeWidth2_
             ]
             []
         ]
@@ -80,8 +94,11 @@ progressCircle percent =
 
 strokeWidth_ : Svg.Attribute msg
 strokeWidth_ =
-    strokeWidth (String.fromInt 4)
+    strokeWidth (String.fromInt 3)
 
+strokeWidth2_ : Svg.Attribute msg
+strokeWidth2_ =
+    strokeWidth (String.fromInt 4)
 
 viewBox_ : Svg.Attribute msg
 viewBox_ =

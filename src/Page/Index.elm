@@ -129,18 +129,76 @@ landingView wheelPercentage =
         , height fill
         ]
         -- TODO make height of this variable
-        (column [ width fill, s4 ]
+        ( column
+            [ width fill
+            , Font.color slate900
+            ]
             [ navbar
             , jumbotron
                 { title = row [] [ text "MY", el [ Font.color primaryColor ] (text "REA"), text "SSURANCE" ]
                 , callToAction = "Join Now"
                 , image = "/img/01 Exterior Front-Edit.jpg"
+                , footerImage = skyline
                 , subTitle = "Everything you want from a top real estate agent."
                 , wheelPercentage = wheelPercentage
                 , content =
                     [ "This offer is all about saving you money but not scarfing the top tier service you are used to from me"
                     , "This will make selling and buying real estate cheaper than any ibuyer or discount broker in the market today! You will receive the full level of service from a top tier agent, high level representation and negotiation when selling and buying and NEVER pay a listing commission, EVER!"
                     , "That’s right NEVER pay a listing commission or convivence fee to a real estate agent or ibuyer EVER again and get top dollar on the sale of your home!"
+                    ]
+                }
+            , talkingPoints
+                { titleLeft = True
+                , primaryColor = primaryColor
+                , secondaryColor = white
+                , bottomImage = Just sold
+                , title = "Never pay an ibuyer convivence fee nor listing commission."
+                , callToAction =
+                    { image = "/img/right.svg"
+                    , description = "arrow"
+                    , text = "GET STARTED"
+                    }
+                , points =
+                    [ { title = "First ever subscription based real estate service!"
+                      , content =
+                        [ "Sign up today and you can sell your fist property in as little as six months."
+                        , "Your subscription entitles you to two commission free sales in five years."
+                        ]
+                       }
+                    , { title = "We are revolutionizing real estate."
+                      , content =
+                        [ "Low monthly subscription fee of only $49 a month and a one-time activation fee of $99."
+                        , "Two commission free sales is an estimated savings of $20,000!"
+                        , "Potentially much more depending on the sales price of your home!"
+                        ]
+                      }
+                    ]
+                }
+            , talkingPoints
+                { titleLeft = False
+                , primaryColor = white
+                , secondaryColor = primaryColor
+                , bottomImage = Nothing
+                , title = "Never pay an ibuyer convivence fee nor listing commission."
+                , callToAction =
+                    { image = "/img/right.svg"
+                    , description = "arrow"
+                    , text = "GET STARTED"
+                    }
+                , points =
+                    [ { title = "First ever subscription based real estate service!"
+                      , content =
+                        [ "Sign up today and you can sell your fist property in as little as six months."
+                        , "Your subscription entitles you to two commission free sales in five years."
+                        ]
+                       }
+                    , { title = "We are revolutionizing real estate."
+                      , content =
+                        [ "Low monthly subscription fee of only $49 a month and a one-time activation fee of $99."
+                        , "Two commission free sales is an estimated savings of $20,000!"
+                        , "Potentially much more depending on the sales price of your home!"
+                        ]
+                      }
                     ]
                 }
             ]
@@ -152,21 +210,10 @@ navbar =
         [ width fill
         , Region.navigation
         , h16
-        , Background.color white
-        , Border.shadow { blur = 10, color = ared100 0, offset = ( 0, 0 ), size = 0.5 }
         ]
-        [ el [ p2, Font.bold ] (text "MyREAsurance") ]
+        []
 
 
--- jumbotron :
---     { title : Element msg
---     , callToAction : String
---     , image : String
---     , subTitle : String
---     , content : List String
---     , wheelPercentage : Int
---     }
---     -> Element Msg
 jumbotron info =
     let
         rounding =
@@ -174,15 +221,13 @@ jumbotron info =
     in
     column
         [ width fill
-        , height fill
-        , Font.color slate900
+        , height (px 750)
         , inFront
             (el
                 [ height (px 500)
                 , width (px 800)
                 , Background.image info.image
                 , centerX
-                , centerY
                 , Font.color white
                 , moveLeft 200
                 , Border.rounded rounding
@@ -203,7 +248,7 @@ jumbotron info =
                                 [ Transition.property "letter-spacing" 500 []
                                 ]
                             ]
-                            { onPress = Nothing, label = el [ inFront (el [ centerX, centerY, Font.bold] (text info.callToAction)) ] (Wheel.progress info.wheelPercentage) }
+                            { onPress = Nothing, label = el [ inFront (el [ centerX, centerY, Font.bold] (text info.callToAction)) ] (Wheel.progress info.wheelPercentage primaryColor) }
                         ]
                     )
                 ]
@@ -222,12 +267,11 @@ jumbotron info =
         , inFront
             (el
                 [ width (px 700)
-                , Background.color (aslate100 0.8)
+                , Background.color (aslate100 0.9)
                 , centerX
                 , centerY
                 , Border.rounded rounding
                 , moveRight 300
-                , moveDown 100
                 ]
                 (column [ p8, s8 ]
                     [ paragraph [ Font.bold, text_5xl ] [ text info.subTitle ]
@@ -236,4 +280,64 @@ jumbotron info =
                 )
             )
         ]
-        []
+        [ el [ width fill, alignBottom, centerX, Font.color primaryColor] skyline
+        ]
+
+talkingPoints info =
+    let
+        pointMax =
+            500
+
+        point content =
+            column [s3]
+                [paragraph [text_4xl, Font.bold] [text content.title]
+                , column [ text_xl, s2 ] (List.map (\t -> paragraph [] [ text t ]) content.content)
+                ]
+    in
+    column
+        [ width fill
+        , Font.color info.secondaryColor
+        ]
+        [ row [centerX, width fill, Background.color info.primaryColor, p8notBottom, s8]
+            ((if info.titleLeft then List.map (\l -> l) else  List.reverse) [ column [ p8notBottom, s8, width (fill |> maximum pointMax), alignTop, centerX, height fill]
+                [ paragraph [ Font.bold, text_5xl ] [ text info.title ]
+                , Input.button [alignTop]
+                    { onPress = Nothing
+                    , label = el
+                        [ Font.color info.secondaryColor
+                        , Background.color info.primaryColor
+                        , Border.rounded 50
+                        , Border.width 1
+                        , Transition.properties_
+                            [ Transition.property "background-color" 500 []
+                            , Transition.color 500 []
+                            ]
+                        , mouseOver
+                            [ Background.color info.secondaryColor
+                            , Font.color info.primaryColor
+                            , Border.color info.secondaryColor
+                            ]
+                        , p5
+                        ]
+                        ( row
+                            [ paddingXY 20 0
+                            , centerX
+                            , Font.family [Font.monospace]
+                            , s4
+                            ]
+                            [ text info.callToAction.text
+                            , el [width (px 25)] (rightArrow)
+                            ]
+                        )
+                    }
+                , ( case info.bottomImage of 
+                     Just img -> 
+                         el [height (px 200), centerX, moveDown 5] (img)
+                     Nothing ->
+                         none
+                  )
+                ]
+            , column [p8, s16, centerX, width (fill |> maximum pointMax)] (List.map point info.points)
+            ]
+            )
+        ]
