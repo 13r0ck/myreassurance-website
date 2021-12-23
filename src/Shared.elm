@@ -1,10 +1,15 @@
 module Shared exposing (Data, Model, Msg(..), SharedMsg(..), template)
 
+import Browser.Events
 import Browser.Navigation
 import DataSource
+import Element exposing (Device, DeviceClass(..), classifyDevice)
 import Html exposing (Html)
+import Json.Decode as Decode
+import Json.Encode as Encode
 import Pages.Flags
 import Pages.PageUrl exposing (PageUrl)
+import Palette
 import Path exposing (Path)
 import Route exposing (Route)
 import SharedTemplate exposing (SharedTemplate)
@@ -29,6 +34,7 @@ type Msg
         , fragment : Maybe String
         }
     | SharedMsg SharedMsg
+    | WindowResized Int Int
 
 
 type alias Data =
@@ -40,8 +46,46 @@ type SharedMsg
 
 
 type alias Model =
-    { showMobileMenu : Bool
+    { viewportWidth : Int
+    , viewportHeight : Int
+    , currentYear : Int
+    , device : DeviceClass
     }
+
+
+defaultModel =
+    -- arbitraty values
+    { viewportWidth = 1920
+    , viewportHeight = 1080
+    , currentYear = 1969
+    , device = Desktop
+    }
+
+
+decodeModel decodeValue =
+    let
+        decodedValue =
+            Decode.decodeValue
+                (Decode.map3
+                    (\w h y ->
+                        { viewportWidth = w
+                        , viewportHeight = h
+                        , currentYear = y
+                        , device = (Palette.classifyDevice { height = h, width = w }).class
+                        }
+                    )
+                    (Decode.field "width" Decode.int)
+                    (Decode.field "height" Decode.int)
+                    (Decode.field "currentYear" Decode.int)
+                )
+                decodeValue
+    in
+    case decodedValue of
+        Ok val ->
+            val
+
+        Err _ ->
+            defaultModel
 
 
 init :
@@ -59,24 +103,34 @@ init :
             }
     -> ( Model, Cmd Msg )
 init navigationKey flags maybePagePath =
-    ( { showMobileMenu = False }
-    , Cmd.none
-    )
+    let
+        flagModel =
+            case flags of
+                Pages.Flags.BrowserFlags val ->
+                    decodeModel val
+
+                Pages.Flags.PreRenderFlags ->
+                    defaultModel
+    in
+    ( flagModel, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         OnPageChange _ ->
-            ( { model | showMobileMenu = False }, Cmd.none )
+            ( model, Cmd.none )
 
         SharedMsg globalMsg ->
             ( model, Cmd.none )
 
+        WindowResized w h ->
+            ( { model | viewportWidth = w, viewportHeight = h, device = (Palette.classifyDevice { height = h, width = w }).class }, Cmd.none )
+
 
 subscriptions : Path -> Model -> Sub Msg
 subscriptions _ _ =
-    Sub.none
+    Browser.Events.onResize WindowResized
 
 
 data : DataSource.DataSource Data

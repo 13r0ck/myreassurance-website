@@ -1,9 +1,11 @@
 module Page.Index exposing (Data, Model, Msg, page)
 
+import Browser.Events
 import DataSource exposing (DataSource)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
+import Element.Events as Events
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
@@ -12,15 +14,15 @@ import Head.Seo as Seo
 import Page exposing (Page, StaticPayload)
 import Pages.PageUrl exposing (PageUrl)
 import Pages.Url
+import Palette exposing (isPhone, isTabletOrSmaller)
 import Shared
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
+import Simple.Transition as Transition
 import Tailwind exposing (..)
+import Utils.Transition as Transition
 import View exposing (View)
 import Wheel
-import Simple.Transition as Transition
-import Utils.Transition as Transition
-import Element.Events as Events
 
 
 type alias Model =
@@ -81,18 +83,19 @@ view :
 view maybeUrl sharedModel model static =
     { title = "MyREAssurance"
     , body =
-        [ landingView model.wheelPercentage ]
+        [ landingView sharedModel model ]
     }
 
+
 init maybeUrl sharedModel static =
-    ({ wheelPercentage = 0
-    }, Cmd.none)
+    ( { wheelPercentage = 0 }, Cmd.none )
 
 
 update maybeUrl key sharedModel static msg model =
     case msg of
         WheelHover percentage ->
-            ({ model | wheelPercentage = percentage }, Cmd.none)
+            ( { model | wheelPercentage = percentage }, Cmd.none )
+
 
 subscriptions maybeUrl routeParams path model =
     Sub.none
@@ -118,24 +121,51 @@ aEl =
 
 -- TYPES
 
+
 primaryColor =
-    red600
+    green600
 
 
-landingView wheelPercentage =
-    Element.layoutWith { options = [ focusStyle (FocusStyle Nothing Nothing Nothing) ] }
+maxWidth =
+    2000
+
+
+landingView sharedModel model =
+    let
+        viewportWidth =
+            sharedModel.viewportWidth
+
+        viewportHeight =
+            sharedModel.viewportHeight
+
+        device =
+            sharedModel.device
+
+        wheelPercentage =
+            model.wheelPercentage
+    in
+    Element.layoutWith
+        { options =
+            [ focusStyle (FocusStyle Nothing Nothing Nothing) ]
+                ++ (if isPhone device then
+                        [ forceHover ]
+
+                    else
+                        []
+                   )
+        }
         [ inFront navbar
         , width fill
         , height fill
         ]
         -- TODO make height of this variable
-        ( column
+        (column
             [ width fill
             , Font.color slate900
             ]
             [ navbar
             , jumbotron
-                { title = row [] [ text "MY", el [ Font.color primaryColor ] (text "REA"), text "SSURANCE" ]
+                { title = row [] [ text "My", el [ Font.color primaryColor ] (text "RE"), text "assurance" ]
                 , callToAction = "Join Now"
                 , image = "/img/01 Exterior Front-Edit.jpg"
                 , footerImage = skyline
@@ -146,6 +176,9 @@ landingView wheelPercentage =
                     , "This will make selling and buying real estate cheaper than any ibuyer or discount broker in the market today! You will receive the full level of service from a top tier agent, high level representation and negotiation when selling and buying and NEVER pay a listing commission, EVER!"
                     , "That’s right NEVER pay a listing commission or convivence fee to a real estate agent or ibuyer EVER again and get top dollar on the sale of your home!"
                     ]
+                , viewportWidth = viewportWidth
+                , viewportHeight = viewportHeight
+                , device = device
                 }
             , talkingPoints
                 { titleLeft = True
@@ -161,18 +194,21 @@ landingView wheelPercentage =
                 , points =
                     [ { title = "First ever subscription based real estate service!"
                       , content =
-                        [ "Sign up today and you can sell your fist property in as little as six months."
-                        , "Your subscription entitles you to two commission free sales in five years."
-                        ]
-                       }
+                            [ "Sign up today and you can sell your fist property in as little as six months."
+                            , "Your subscription entitles you to two commission free sales in five years."
+                            ]
+                      }
                     , { title = "We are revolutionizing real estate."
                       , content =
-                        [ "Low monthly subscription fee of only $49 a month and a one-time activation fee of $99."
-                        , "Two commission free sales is an estimated savings of $20,000!"
-                        , "Potentially much more depending on the sales price of your home!"
-                        ]
+                            [ "Low monthly subscription fee of only $49 a month and a one-time activation fee of $99."
+                            , "Two commission free sales is an estimated savings of $20,000!"
+                            , "Potentially much more depending on the sales price of your home!"
+                            ]
                       }
                     ]
+                , viewportWidth = viewportWidth
+                , viewportHeight = viewportHeight
+                , device = device
                 }
             , talkingPoints
                 { titleLeft = False
@@ -188,18 +224,21 @@ landingView wheelPercentage =
                 , points =
                     [ { title = "First ever subscription based real estate service!"
                       , content =
-                        [ "Sign up today and you can sell your fist property in as little as six months."
-                        , "Your subscription entitles you to two commission free sales in five years."
-                        ]
-                       }
+                            [ "Sign up today and you can sell your fist property in as little as six months."
+                            , "Your subscription entitles you to two commission free sales in five years."
+                            ]
+                      }
                     , { title = "We are revolutionizing real estate."
                       , content =
-                        [ "Low monthly subscription fee of only $49 a month and a one-time activation fee of $99."
-                        , "Two commission free sales is an estimated savings of $20,000!"
-                        , "Potentially much more depending on the sales price of your home!"
-                        ]
+                            [ "Low monthly subscription fee of only $49 a month and a one-time activation fee of $99."
+                            , "Two commission free sales is an estimated savings of $20,000!"
+                            , "Potentially much more depending on the sales price of your home!"
+                            ]
                       }
                     ]
+                , viewportWidth = viewportWidth
+                , viewportHeight = viewportHeight
+                , device = device
                 }
             ]
         )
@@ -218,10 +257,28 @@ jumbotron info =
     let
         rounding =
             10
+
+        text_xs =
+            Palette.text_xs info.device
+
+        text_sm =
+            Palette.text_sm info.device
+
+        text_md =
+            Palette.text_md info.device
+
+        text_lg =
+            Palette.text_lg info.device
+
+        text_xl =
+            Palette.text_xl info.device
+
+        text_2xl =
+            Palette.text_2xl info.device
     in
     column
         [ width fill
-        , height (px 750)
+        , height (minimum info.viewportHeight (px 800))
         , inFront
             (el
                 [ height (px 500)
@@ -233,12 +290,18 @@ jumbotron info =
                 , Border.rounded rounding
                 , inFront (column [ centerX, s8, p8 ] [ el [ Font.size 80, s8, Font.bold ] info.title ])
                 , inFront
-                    ( column
+                    (column
                         [ centerX, centerY, s8, p8 ]
                         [ Input.button
                             [ centerX
-                            , text_3xl
-                            , Font.letterSpacing (if info.wheelPercentage > 50 then 4 else 2)
+                            , text_md
+                            , Font.letterSpacing
+                                (if info.wheelPercentage > 50 then
+                                    4
+
+                                 else
+                                    2
+                                )
                             , s8
                             , Font.light
                             , width (px 200)
@@ -248,17 +311,17 @@ jumbotron info =
                                 [ Transition.property "letter-spacing" 500 []
                                 ]
                             ]
-                            { onPress = Nothing, label = el [ inFront (el [ centerX, centerY, Font.bold] (text info.callToAction)) ] (Wheel.progress info.wheelPercentage primaryColor) }
+                            { onPress = Nothing, label = el [ inFront (el [ centerX, centerY, Font.bold ] (text info.callToAction)) ] (Wheel.progress info.wheelPercentage primaryColor) }
                         ]
                     )
                 ]
-                ( el
+                (el
                     [ width fill
                     , height fill
                     , Border.rounded rounding
                     , Background.gradient
                         { angle = 135 |> degrees
-                        , steps = [ ablue800 0.5, agreen800 0.5, ayellow800 0.5 ]
+                        , steps = [ ablue800 0.8, agreen800 0.5, ayellow800 0.5 ]
                         }
                     ]
                     none
@@ -274,14 +337,15 @@ jumbotron info =
                 , moveRight 300
                 ]
                 (column [ p8, s8 ]
-                    [ paragraph [ Font.bold, text_5xl ] [ text info.subTitle ]
-                    , column [ text_2xl, s3 ] (List.map (\t -> paragraph [] [ text t ]) info.content)
+                    [ paragraph [ Font.bold, text_xl ] [ text info.subTitle ]
+                    , column [ text_md, s3 ] (List.map (\t -> paragraph [] [ text t ]) info.content)
                     ]
                 )
             )
         ]
-        [ el [ width fill, alignBottom, centerX, Font.color primaryColor] skyline
+        [ el [ width (fill |> maximum maxWidth |> minimum (maxWidth / 2 |> round)), alignBottom, centerX, Font.color primaryColor, moveDown 1 ] skyline
         ]
+
 
 talkingPoints info =
     let
@@ -289,55 +353,103 @@ talkingPoints info =
             500
 
         point content =
-            column [s3]
-                [paragraph [text_4xl, Font.bold] [text content.title]
-                , column [ text_xl, s2 ] (List.map (\t -> paragraph [] [ text t ]) content.content)
+            column [ s3 ]
+                [ paragraph [ text_lg, Font.bold ] [ text content.title ]
+                , column [ text_md, s2 ] (List.map (\t -> paragraph [] [ text t ]) content.content)
                 ]
+
+        text_xs =
+            Palette.text_xs info.device
+
+        text_sm =
+            Palette.text_sm info.device
+
+        text_md =
+            Palette.text_md info.device
+
+        text_lg =
+            Palette.text_lg info.device
+
+        text_xl =
+            Palette.text_xl info.device
+
+        text_2xl =
+            Palette.text_2xl info.device
+
+        device =
+            info.device
     in
     column
         [ width fill
         , Font.color info.secondaryColor
         ]
-        [ row [centerX, width fill, Background.color info.primaryColor, p8notBottom, s8]
-            ((if info.titleLeft then List.map (\l -> l) else  List.reverse) [ column [ p8notBottom, s8, width (fill |> maximum pointMax), alignTop, centerX, height fill]
-                [ paragraph [ Font.bold, text_5xl ] [ text info.title ]
-                , Input.button [alignTop]
-                    { onPress = Nothing
-                    , label = el
-                        [ Font.color info.secondaryColor
-                        , Background.color info.primaryColor
-                        , Border.rounded 50
-                        , Border.width 1
-                        , Transition.properties_
-                            [ Transition.property "background-color" 500 []
-                            , Transition.color 500 []
-                            ]
-                        , mouseOver
-                            [ Background.color info.secondaryColor
-                            , Font.color info.primaryColor
-                            , Border.color info.secondaryColor
-                            ]
-                        , p5
-                        ]
-                        ( row
-                            [ paddingXY 20 0
-                            , centerX
-                            , Font.family [Font.monospace]
-                            , s4
-                            ]
-                            [ text info.callToAction.text
-                            , el [width (px 25)] (rightArrow)
-                            ]
-                        )
-                    }
-                , ( case info.bottomImage of 
-                     Just img -> 
-                         el [height (px 200), centerX, moveDown 5] (img)
-                     Nothing ->
-                         none
-                  )
+        [ (if isTabletOrSmaller device then
+            column
+
+           else
+            row
+          )
+            [ centerX, width fill, Background.color info.primaryColor, p8notBottom, s8 ]
+            ((if info.titleLeft || isTabletOrSmaller device then
+                List.map (\l -> l)
+
+              else
+                List.reverse
+             )
+                [ column [ p8notBottom, s8, width (fill |> maximum pointMax), alignTop, centerX, height fill ]
+                    [ paragraph [ Font.bold, text_xl ] [ text info.title ]
+                    , Input.button [ alignTop ]
+                        { onPress = Nothing
+                        , label =
+                            el
+                                [ Font.color info.secondaryColor
+                                , Background.color info.primaryColor
+                                , Border.rounded 50
+                                , Border.width 1
+                                , Transition.properties_
+                                    [ Transition.property "background-color" 500 []
+                                    , Transition.color 500 []
+                                    ]
+                                , mouseOver
+                                    [ Background.color info.secondaryColor
+                                    , Font.color info.primaryColor
+                                    , Border.color info.secondaryColor
+                                    ]
+                                , p5
+                                ]
+                                (row
+                                    [ paddingXY 20 0
+                                    , centerX
+                                    , Font.family [ Font.monospace ]
+                                    , s4
+                                    ]
+                                    [ text info.callToAction.text
+                                    , el [ width (px 25) ] rightArrow
+                                    ]
+                                )
+                        }
+                    , case info.bottomImage of
+                        Just img ->
+                            if not (isTabletOrSmaller device) then
+                                el [ height (px 300), centerX, moveDown 5 ] img
+
+                            else
+                                none
+
+                        Nothing ->
+                            none
+                    ]
+                , column [ p8, s16, centerX, width (fill |> maximum pointMax) ] (List.map point info.points)
+                , case info.bottomImage of
+                    Just img ->
+                        if isTabletOrSmaller device then
+                            el [ height (px 300), centerX, moveDown 5 ] img
+
+                        else
+                            none
+
+                    Nothing ->
+                        none
                 ]
-            , column [p8, s16, centerX, width (fill |> maximum pointMax)] (List.map point info.points)
-            ]
             )
         ]

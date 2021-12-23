@@ -4,12 +4,12 @@
 module Wheel exposing (progress)
 
 import Element exposing (Element)
+import Hex
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Property as P
 import Svg exposing (Svg)
 import Svg.Attributes exposing (..)
 import Utils.Animated as Animated
-import Hex
 
 
 
@@ -45,19 +45,34 @@ progress percent c =
             )
         )
 
+
 toHexCode c =
-    Element.toRgb c |> (\rgb -> String.concat
-        [ "#"
-        , rgb.red |> to255 |> Hex.toString |> add0
-        , rgb.green |> to255 |> Hex.toString |> add0
-        , rgb.blue |> to255 |> Hex.toString |> add0
-        ])
+    Element.toRgb c
+        |> (\rgb ->
+                String.concat
+                    [ "#"
+                    , rgb.red |> to255 |> Hex.toString |> add0
+                    , rgb.green |> to255 |> Hex.toString |> add0
+                    , rgb.blue |> to255 |> Hex.toString |> add0
+                    ]
+           )
+
 
 to255 val =
-    if val == 1.0 then 255 else val * 256.0 |> floor
+    if val == 1.0 then
+        255
+
+    else
+        val * 256.0 |> floor
+
 
 add0 s =
-    if String.length s < 2 then "0" ++ s else s
+    if String.length s < 2 then
+        "0" ++ s
+
+    else
+        s
+
 
 progressCircle : Int -> String -> Svg msg
 progressCircle percent hexColor =
@@ -96,9 +111,11 @@ strokeWidth_ : Svg.Attribute msg
 strokeWidth_ =
     strokeWidth (String.fromInt 3)
 
+
 strokeWidth2_ : Svg.Attribute msg
 strokeWidth2_ =
     strokeWidth (String.fromInt 4)
+
 
 viewBox_ : Svg.Attribute msg
 viewBox_ =
