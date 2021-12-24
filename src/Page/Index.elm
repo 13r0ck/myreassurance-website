@@ -172,7 +172,7 @@ landingView sharedModel model =
             , jumbotron
                 { title = row [] [ text "My", el [ Font.color primaryColor ] (text "RE"), text "assurance" ]
                 , callToAction = "Join Now"
-                , image = "/img/01 Exterior Front-Edit.jpg"
+                , image = "/img/house.jpg"
                 , footerImage = skyline
                 , subTitle = "Everything you want from a top real estate agent."
                 , wheelPercentage = wheelPercentage
