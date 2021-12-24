@@ -244,6 +244,10 @@ landingView sharedModel model =
                 , viewportHeight = viewportHeight
                 , device = device
                 }
+            , footer
+                { backgroundColor = neutral600
+                , copyright = "© " ++ (String.fromInt sharedModel.currentYear) ++ " MyREassurance"
+                }
             ]
         )
 
@@ -524,3 +528,8 @@ talkingPoints info =
                 ]
             )
         ]
+
+footer info =
+    el [width fill, Background.color info.backgroundColor, Font.color white, p4]
+       ( el [width (fill |> maximum maxWidth), centerX] (text info.copyright)
+       )
