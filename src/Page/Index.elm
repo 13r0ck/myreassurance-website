@@ -63,9 +63,9 @@ head static =
             , dimensions = Nothing
             , mimeType = Nothing
             }
-        , description = "TODO"
+        , description = "Never pay a listing commission or an ibuyer convivence fee. First ever subscription based real estate service!"
         , locale = Nothing
-        , title = "TODO title" -- metadata.title -- TODO
+        , title = "MyREassurance" -- metadata.title -- TODO
         }
         |> Seo.website
 
