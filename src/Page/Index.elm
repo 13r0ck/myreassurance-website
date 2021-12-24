@@ -246,7 +246,7 @@ landingView sharedModel model =
                 }
             , footer
                 { backgroundColor = neutral600
-                , copyright = "© " ++ (String.fromInt sharedModel.currentYear) ++ " MyREassurance"
+                , copyright = "© " ++ String.fromInt sharedModel.currentYear ++ " MyREassurance"
                 }
             ]
         )
@@ -301,7 +301,7 @@ jumbotron info =
     column
         [ width (fill |> maximum 1200)
         , centerX
-        , height (minimum info.viewportHeight (px 900))
+        , height (px info.viewportHeight |> maximum 1200 |> minimum 900)
         , inFront
             (el
                 [ height (px 500)
@@ -529,7 +529,7 @@ talkingPoints info =
             )
         ]
 
+
 footer info =
-    el [width fill, Background.color info.backgroundColor, Font.color white, p4]
-       ( el [width (fill |> maximum maxWidth), centerX] (text info.copyright)
-       )
+    el [ width fill, Background.color info.backgroundColor, Font.color white, p4 ]
+        (el [ width (fill |> maximum maxWidth), centerX ] (text info.copyright))
