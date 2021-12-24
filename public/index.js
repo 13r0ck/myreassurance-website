@@ -7,7 +7,6 @@ export default {
     console.log("App loaded", app);
   },
   flags: function () {
-    let flags = { width: window.innerWidth, height: window.innerHeight, year : ( new Date().getFullYear()) };
-    return JSON.stringify(flags);
+    return { width: window.innerWidth, height: window.innerHeight, year : ( new Date().getFullYear()) };
   },
 };

@@ -76,7 +76,7 @@ decodeModel decodeValue =
                     )
                     (Decode.field "width" Decode.int)
                     (Decode.field "height" Decode.int)
-                    (Decode.field "currentYear" Decode.int)
+                    (Decode.field "year" Decode.int)
                 )
                 decodeValue
     in

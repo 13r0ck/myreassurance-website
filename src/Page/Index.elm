@@ -157,13 +157,18 @@ landingView sharedModel model =
         [ inFront navbar
         , width fill
         , height fill
+        , clip
         ]
         -- TODO make height of this variable
         (column
             [ width fill
             , Font.color slate900
             ]
-            [ navbar
+            [ if isPhone sharedModel.device then
+                none
+
+              else
+                navbar
             , jumbotron
                 { title = row [] [ text "My", el [ Font.color primaryColor ] (text "RE"), text "assurance" ]
                 , callToAction = "Join Now"
@@ -172,9 +177,8 @@ landingView sharedModel model =
                 , subTitle = "Everything you want from a top real estate agent."
                 , wheelPercentage = wheelPercentage
                 , content =
-                    [ "This offer is all about saving you money but not scarfing the top tier service you are used to from me"
-                    , "This will make selling and buying real estate cheaper than any ibuyer or discount broker in the market today! You will receive the full level of service from a top tier agent, high level representation and negotiation when selling and buying and NEVER pay a listing commission, EVER!"
-                    , "That’s right NEVER pay a listing commission or convivence fee to a real estate agent or ibuyer EVER again and get top dollar on the sale of your home!"
+                    [ "Save money and recive top tier service!"
+                    , "Cheaper than any ibuyer or discount broker in the market today! Never pay a listing commision EVER!"
                     ]
                 , viewportWidth = viewportWidth
                 , viewportHeight = viewportHeight
@@ -185,7 +189,7 @@ landingView sharedModel model =
                 , primaryColor = primaryColor
                 , secondaryColor = white
                 , bottomImage = Just sold
-                , title = "Never pay an ibuyer convivence fee nor listing commission."
+                , title = "Never pay a listing commission or an ibuyer convivence fee."
                 , callToAction =
                     { image = "/img/right.svg"
                     , description = "arrow"
@@ -201,7 +205,7 @@ landingView sharedModel model =
                     , { title = "We are revolutionizing real estate."
                       , content =
                             [ "Low monthly subscription fee of only $49 a month and a one-time activation fee of $99."
-                            , "Two commission free sales is an estimated savings of $20,000!"
+                            , "Two commission free sales is an estimated minimum savings of $20,000!"
                             , "Potentially much more depending on the sales price of your home!"
                             ]
                       }
@@ -215,7 +219,7 @@ landingView sharedModel model =
                 , primaryColor = white
                 , secondaryColor = primaryColor
                 , bottomImage = Nothing
-                , title = "Never pay an ibuyer convivence fee nor listing commission."
+                , title = "Never pay a listing commission or an ibuyer convivence fee."
                 , callToAction =
                     { image = "/img/right.svg"
                     , description = "arrow"
@@ -231,7 +235,7 @@ landingView sharedModel model =
                     , { title = "We are revolutionizing real estate."
                       , content =
                             [ "Low monthly subscription fee of only $49 a month and a one-time activation fee of $99."
-                            , "Two commission free sales is an estimated savings of $20,000!"
+                            , "Two commission free sales is an estimated minimum savings of $20,000!"
                             , "Potentially much more depending on the sales price of your home!"
                             ]
                       }
@@ -275,20 +279,44 @@ jumbotron info =
 
         text_2xl =
             Palette.text_2xl info.device
+
+        pad =
+            if isPhone info.device then
+                p2
+
+            else
+                p8
+
+        space =
+            if isPhone info.device then
+                s4
+
+            else
+                s8
     in
     column
-        [ width fill
-        , height (minimum info.viewportHeight (px 800))
+        [ width (fill |> maximum 1200)
+        , centerX
+        , height (minimum info.viewportHeight (px 900))
         , inFront
             (el
                 [ height (px 500)
-                , width (px 800)
+                , width (fill |> maximum 800)
                 , Background.image info.image
-                , centerX
                 , Font.color white
-                , moveLeft 200
-                , Border.rounded rounding
-                , inFront (column [ centerX, s8, p8 ] [ el [ Font.size 80, s8, Font.bold ] info.title ])
+                , if isTabletOrSmaller info.device then
+                    centerX
+
+                  else
+                    alignLeft
+                , Border.rounded
+                    (if isPhone info.device then
+                        0
+
+                     else
+                        rounding
+                    )
+                , inFront (column [ centerX, s8, p8 ] [ el [ text_2xl, s8, Font.bold ] info.title ])
                 , inFront
                     (column
                         [ centerX, centerY, s8, p8 ]
@@ -318,7 +346,13 @@ jumbotron info =
                 (el
                     [ width fill
                     , height fill
-                    , Border.rounded rounding
+                    , Border.rounded
+                        (if isPhone info.device then
+                            0
+
+                         else
+                            rounding
+                        )
                     , Background.gradient
                         { angle = 135 |> degrees
                         , steps = [ ablue800 0.8, agreen800 0.5, ayellow800 0.5 ]
@@ -329,21 +363,37 @@ jumbotron info =
             )
         , inFront
             (el
-                [ width (px 700)
-                , Background.color (aslate100 0.9)
-                , centerX
+                [ width (maximum 700 (toFloat info.viewportWidth * 0.9 |> round |> px))
+                , Background.color (aslate100 0.8)
                 , centerY
+                , pad
                 , Border.rounded rounding
-                , moveRight 300
+                , if isTabletOrSmaller info.device then
+                    centerX
+
+                  else
+                    alignRight
+                , if isTabletOrSmaller info.device then
+                    Font.center
+
+                  else
+                    Font.alignLeft
+                , moveDown
+                    (if isTabletOrSmaller info.device then
+                        150
+
+                     else
+                        0
+                    )
                 ]
                 (column [ p8, s8 ]
-                    [ paragraph [ Font.bold, text_xl ] [ text info.subTitle ]
+                    [ paragraph [ Font.bold, text_lg ] [ text info.subTitle ]
                     , column [ text_md, s3 ] (List.map (\t -> paragraph [] [ text t ]) info.content)
                     ]
                 )
             )
         ]
-        [ el [ width (fill |> maximum maxWidth |> minimum (maxWidth / 2 |> round)), alignBottom, centerX, Font.color primaryColor, moveDown 1 ] skyline
+        [ el [ width (px maxWidth), alignBottom, centerX, Font.color primaryColor, moveDown 1 ] skyline
         ]
 
 
@@ -357,6 +407,27 @@ talkingPoints info =
                 [ paragraph [ text_lg, Font.bold ] [ text content.title ]
                 , column [ text_md, s2 ] (List.map (\t -> paragraph [] [ text t ]) content.content)
                 ]
+
+        pad =
+            if isPhone info.device then
+                p4
+
+            else
+                p8
+
+        padNotBottom =
+            if isPhone info.device then
+                p4notBottom
+
+            else
+                p8notBottom
+
+        space =
+            if isPhone info.device then
+                s4
+
+            else
+                s8
 
         text_xs =
             Palette.text_xs info.device
@@ -389,14 +460,14 @@ talkingPoints info =
            else
             row
           )
-            [ centerX, width fill, Background.color info.primaryColor, p8notBottom, s8 ]
+            [ centerX, width fill, Background.color info.primaryColor, p8notBottom, space ]
             ((if info.titleLeft || isTabletOrSmaller device then
                 List.map (\l -> l)
 
               else
                 List.reverse
              )
-                [ column [ p8notBottom, s8, width (fill |> maximum pointMax), alignTop, centerX, height fill ]
+                [ column [ p8notBottom, space, width (fill |> maximum pointMax), alignTop, centerX, height fill ]
                     [ paragraph [ Font.bold, text_xl ] [ text info.title ]
                     , Input.button [ alignTop ]
                         { onPress = Nothing

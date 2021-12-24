@@ -216,6 +216,10 @@ p8notBottom =
     basefont * 2 |> round |> (\p -> paddingEach { top = p, bottom = 0, left = p, right = p })
 
 
+p4notBottom =
+    basefont * 1 |> round |> (\p -> paddingEach { top = p, bottom = 0, left = p, right = p })
+
+
 p9 =
     basefont * 2.25 |> round |> padding
 
