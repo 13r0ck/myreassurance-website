@@ -1,36 +1,75 @@
 module Page.Index exposing (Data, Model, Msg, page)
 
+import Agreement exposing (agreement)
 import Browser.Events
 import DataSource exposing (DataSource)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Events as Events
-import Element.Font as Font
+import Element.Font as Font exposing (center)
 import Element.Input as Input
+import Element.Lazy as Lazy
 import Element.Region as Region
 import Head
 import Head.Seo as Seo
+import Html
+import Html.Attributes
+import Mailcheck
+import Markdown.Block as Block exposing (Block, Inline, ListItem(..), Task(..))
+import Markdown.Html
+import Markdown.Parser
+import Markdown.Renderer
 import Page exposing (Page, StaticPayload)
 import Pages.PageUrl exposing (PageUrl)
 import Pages.Url
-import Palette exposing (isPhone, isTabletOrSmaller)
+import Palette exposing (isPhone, isTabletOrSmaller, text_sm)
+import Process
 import Shared
 import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
+import Simple.Animation.Property as Property
 import Simple.Transition as Transition
 import Tailwind exposing (..)
+import Task
 import Utils.Transition as Transition
 import View exposing (View)
 import Wheel
 
 
 type alias Model =
-    { wheelPercentage : Int }
+    { wheelPercentage : Int
+    , signupView : State
+    , nameText : String
+    , emailText : String
+    , addressText : String
+    , signupPageTracker : SignUpPage
+    , lockScroll : Bool
+    , suggestedEmail : Maybe ( String, String, String )
+    }
+
+
+type SignUpPage
+    = UserInfo
+    | Terms
+    | CardConnect
+
+
+type State
+    = Open
+    | Closed
 
 
 type Msg
     = WheelHover Int
+    | OpenSignUpView
+    | CloseSignUpView
+    | UpdateName String
+    | UpdateEmail String
+    | UpdateAddress String
+    | LockScroll ()
+    | NextSignUpView
+    | FillCorrectEmail
 
 
 type alias RouteParams =
@@ -88,13 +127,61 @@ view maybeUrl sharedModel model static =
 
 
 init maybeUrl sharedModel static =
-    ( { wheelPercentage = 0 }, Cmd.none )
+    ( { wheelPercentage = 0, signupView = Closed, nameText = "", emailText = "", addressText = "", signupPageTracker = UserInfo, lockScroll = False, suggestedEmail = Nothing }, Cmd.none )
 
 
 update maybeUrl key sharedModel static msg model =
     case msg of
         WheelHover percentage ->
             ( { model | wheelPercentage = percentage }, Cmd.none )
+
+        OpenSignUpView ->
+            ( { model | signupView = Open }, Task.perform LockScroll (Process.sleep 500) )
+
+        CloseSignUpView ->
+            ( { model | signupView = Closed, signupPageTracker = UserInfo, lockScroll = False }, Cmd.none )
+
+        UpdateName newName ->
+            ( { model | nameText = newName }, Cmd.none )
+
+        UpdateEmail newEmail ->
+            ( { model | emailText = newEmail, suggestedEmail = Mailcheck.suggest newEmail }, Cmd.none )
+
+        UpdateAddress newAddress ->
+            ( { model | addressText = newAddress }, Cmd.none )
+
+        LockScroll _ ->
+            ( { model | lockScroll = True }, Cmd.none )
+
+        NextSignUpView ->
+            ( { model
+                | signupPageTracker =
+                    case model.signupPageTracker of
+                        UserInfo ->
+                            Terms
+
+                        Terms ->
+                            CardConnect
+
+                        CardConnect ->
+                            CardConnect
+              }
+            , Cmd.none
+            )
+
+        FillCorrectEmail ->
+            ( { model
+                | emailText =
+                    case model.suggestedEmail of
+                        Just ( _, _, email ) ->
+                            email
+
+                        Nothing ->
+                            model.emailText
+                , suggestedEmail = Nothing
+              }
+            , Cmd.none
+            )
 
 
 subscriptions maybeUrl routeParams path model =
@@ -113,9 +200,9 @@ animatedUi =
         }
 
 
-aEl : Animation -> List (Element.Attribute msg) -> Element msg -> Element msg
-aEl =
-    animatedUi Element.el
+aCol : Animation -> List (Element.Attribute msg) -> List (Element msg) -> Element msg
+aCol =
+    animatedUi column
 
 
 
@@ -143,34 +230,53 @@ landingView sharedModel model =
 
         wheelPercentage =
             model.wheelPercentage
+
+        defaultFocusStyle =
+            focusStyle (FocusStyle Nothing Nothing Nothing)
+
+        defaultLayout =
+            [ width fill, height fill, clip ]
+
+        defaultColLayout =
+            [ width fill, Font.color slate900 ]
+
+        logo =
+            row [] [ text "My", el [ Font.color primaryColor ] (text "RE"), text "assurance" ]
+
+        footerArgs =
+            { backgroundColor = neutral600
+            , copyright = "© " ++ String.fromInt sharedModel.currentYear ++ " MyREassurance"
+            }
     in
     Element.layoutWith
         { options =
-            [ focusStyle (FocusStyle Nothing Nothing Nothing) ]
-                ++ (if isPhone device then
-                        [ forceHover ]
+            if isPhone device then
+                [ defaultFocusStyle, forceHover ]
 
-                    else
-                        []
-                   )
+            else
+                [ defaultFocusStyle ]
         }
-        [ inFront navbar
-        , width fill
-        , height fill
-        , clip
-        ]
-        -- TODO make height of this variable
+        (case model.signupView of
+            Open ->
+                inFront (Lazy.lazy3 signupView sharedModel model { logo = logo, footerArgs = footerArgs, primaryColor = white, secondaryColor = primaryColor }) :: defaultLayout
+
+            Closed ->
+                defaultLayout
+        )
         (column
-            [ width fill
-            , Font.color slate900
-            ]
+            (if model.lockScroll then
+                defaultColLayout ++ [ height (px sharedModel.viewportHeight), clip ]
+
+             else
+                defaultColLayout
+            )
             [ if isPhone sharedModel.device then
                 none
 
               else
                 navbar
             , jumbotron
-                { title = row [] [ text "My", el [ Font.color primaryColor ] (text "RE"), text "assurance" ]
+                { title = logo
                 , callToAction = "Join Now"
                 , image = "/img/house.jpg"
                 , footerImage = skyline
@@ -219,24 +325,21 @@ landingView sharedModel model =
                 , primaryColor = white
                 , secondaryColor = primaryColor
                 , bottomImage = Nothing
-                , title = "Never pay a listing commission or an ibuyer convivence fee."
+                , title = "No listing commissions, ibuyer fees or transfer fees!"
                 , callToAction =
                     { image = "/img/right.svg"
                     , description = "arrow"
                     , text = "GET STARTED"
                     }
                 , points =
-                    [ { title = "First ever subscription based real estate service!"
+                    [ { title = "Transfer your subscription to anyone at anytime for free!"
                       , content =
-                            [ "Sign up today and you can sell your fist property in as little as six months."
-                            , "Your subscription entitles you to two commission free sales in five years."
-                            ]
+                            [ "Use one sale and transfer the last sale for use by a friend or family member, or transfer both sales." ]
                       }
-                    , { title = "We are revolutionizing real estate."
+                    , { title = "The lowest cost way to sell real estate on the market today!"
                       , content =
-                            [ "Low monthly subscription fee of only $49 a month and a one-time activation fee of $99."
-                            , "Two commission free sales is an estimated minimum savings of $20,000!"
-                            , "Potentially much more depending on the sales price of your home!"
+                            [ "Only $99 to start and sell two properties within two years."
+                            , "No limit on the sales price of your home."
                             ]
                       }
                     ]
@@ -245,10 +348,258 @@ landingView sharedModel model =
                 , device = device
                 }
             , footer
-                { backgroundColor = neutral600
-                , copyright = "© " ++ String.fromInt sharedModel.currentYear ++ " MyREassurance"
-                }
+                footerArgs
             ]
+        )
+
+
+signupView sharedModel model info =
+    aCol
+        (Animation.fromTo
+            { duration = 500
+            , options = []
+            }
+            [ Property.opacity 0 ]
+            [ Property.opacity 1 ]
+        )
+        [ width fill
+        , height fill
+        , centerX
+        , Background.color slate100
+        , Font.color slate900
+        , scrollbarY
+        ]
+        [ signupNavbar
+            { logo = info.logo
+            , device = sharedModel.device
+            }
+        , column [ centerX, p8, s8 ]
+            [ signUpTitle
+                { title = "Create Your Account"
+                , subTitle = "Be one of the first 100 to sign up!"
+                , device = sharedModel.device
+                }
+            , signupScroller
+                { nameText = model.nameText
+                , emailText = model.emailText
+                , addressText = model.addressText
+                , suggestedEmail = model.suggestedEmail
+                , signupPageTracker = model.signupPageTracker
+                , fullDate = sharedModel.fullDate
+                , device = sharedModel.device
+                }
+            , nextButton
+                { primaryColor = info.primaryColor, secondaryColor = info.secondaryColor, signupPageTracker = model.signupPageTracker, device = sharedModel.device, emailText = model.emailText, nameText = model.nameText, addressText = model.addressText, suggestedEmail = model.suggestedEmail }
+            ]
+        , el [ alignBottom, width fill ] (footer info.footerArgs)
+        ]
+
+
+signupNavbar info =
+    let
+        text_xs =
+            Palette.text_xs info.device
+
+        text_sm =
+            Palette.text_sm info.device
+
+        text_md =
+            Palette.text_md info.device
+
+        text_lg =
+            Palette.text_lg info.device
+
+        text_xl =
+            Palette.text_xl info.device
+
+        text_2xl =
+            Palette.text_2xl info.device
+    in
+    Input.button [ width fill ] { onPress = Just CloseSignUpView, label = el [ width fill, Background.color white, p8, text_md, Font.bold ] info.logo }
+
+
+signUpTitle info =
+    let
+        text_xs =
+            Palette.text_xs info.device
+
+        text_sm =
+            Palette.text_sm info.device
+
+        text_md =
+            Palette.text_md info.device
+
+        text_lg =
+            Palette.text_lg info.device
+
+        text_xl =
+            Palette.text_xl info.device
+
+        text_2xl =
+            Palette.text_2xl info.device
+    in
+    column [ centerX, s4 ]
+        [ paragraph [ Font.center, Font.extraBold, text_xl ] [ text info.title ]
+        , el [ centerX ] (paragraph [] [ text info.subTitle ])
+        ]
+
+
+signupScroller info =
+    let
+        text_xs =
+            Palette.text_xs info.device
+
+        text_sm =
+            Palette.text_sm info.device
+
+        text_md =
+            Palette.text_md info.device
+
+        text_lg =
+            Palette.text_lg info.device
+
+        text_xl =
+            Palette.text_xl info.device
+
+        text_2xl =
+            Palette.text_2xl info.device
+
+        pad =
+            if isPhone info.device then
+                p6
+
+            else
+                p16
+
+        frame =
+            column
+                [ Background.color white
+                , pad
+                , s16
+                , centerX
+                , width (fill |> maximum 800)
+                , Font.color slate700
+                , Border.rounded 20
+                , Border.shadow { offset = ( 5, 10 ), size = 5, blur = 20, color = slate300 }
+                ]
+    in
+    frame
+        (case info.signupPageTracker of
+            UserInfo ->
+                [ column [ width fill ]
+                    [ Input.text [ Font.color slate900 ] { onChange = UpdateEmail, text = info.emailText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Email")) }
+                    , Input.button [ alignRight, text_xs, Font.color red500 ]
+                        { onPress = Just FillCorrectEmail
+                        , label =
+                            text
+                                (case info.suggestedEmail of
+                                    Just ( _, _, email ) ->
+                                        "Did you mean " ++ email ++ "?"
+
+                                    Nothing ->
+                                        ""
+                                )
+                        }
+                    ]
+                , Input.text [ Font.color slate900 ] { onChange = UpdateName, text = info.nameText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Name")) }
+                , Input.text [ Font.color slate900 ] { onChange = UpdateAddress, text = info.addressText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Home Address")) }
+                ]
+
+            Terms ->
+                case markdownView (Agreement.agreement |> String.replace "[CUSTOMER NAME]" info.nameText |> String.replace "[DATE]" info.fullDate |> String.replace "[ADDRESS]" info.addressText) of
+                    Ok rendered ->
+                        rendered
+
+                    Err errors ->
+                        [ column [ Font.center, s8, centerX, Font.color red500 ] [ el [ centerX ] (text "View failed. Please contact website administrator."), el [ centerX ] (text errors) ] ]
+
+            CardConnect ->
+                [ text "This is a placeholder for the CardConnect iframe" ]
+        )
+
+
+nextButton info =
+    let
+        text_xs =
+            Palette.text_xs info.device
+
+        text_sm =
+            Palette.text_sm info.device
+
+        text_md =
+            Palette.text_md info.device
+
+        consentButtonText =
+            "CONTINUE"
+
+        consentText =
+            "By clicking “" ++ consentButtonText ++ "” you agree to the Services Subscription agreement above."
+
+        button mainColor secondaryColor action =
+            let
+                defaultStyleing =
+                    [ Font.color secondaryColor
+                    , Background.color mainColor
+                    , Border.rounded 50
+                    , p5
+                    , Transition.properties_
+                        [ Transition.transform 500 []
+                        , Transition.color 500 []
+                        , Transition.backgroundColor 500 []
+                        ]
+                    ]
+
+                mouseHover =
+                    [ mouseOver
+                        [ scale 1.05
+                        ]
+                    , Border.shadow { offset = ( 5, 10 ), size = 5, blur = 10, color = slate300 }
+                    ]
+            in
+            Input.button [ alignTop, centerX ]
+                { onPress = action
+                , label =
+                    el
+                        (case action of
+                            Just _ ->
+                                mouseHover ++ defaultStyleing
+
+                            Nothing ->
+                                defaultStyleing
+                        )
+                        (row
+                            [ paddingXY 30 0
+                            , centerX
+                            , Font.family [ Font.monospace ]
+                            , s4
+                            ]
+                            [ text consentButtonText
+                            ]
+                        )
+                }
+
+        activeButton =
+            button info.secondaryColor info.primaryColor (Just NextSignUpView)
+
+        disabledButton =
+            button slate300 slate500 Nothing
+    in
+    column [ centerX, p8, width (fill |> maximum 450), s8 ]
+        (case info.signupPageTracker of
+            UserInfo ->
+                if String.length info.nameText >= 5 && String.length info.emailText > 5 && String.length info.addressText > 5 && info.suggestedEmail == Nothing then
+                    [ activeButton ]
+
+                else
+                    [ disabledButton ]
+
+            Terms ->
+                [ paragraph [ Font.center, Font.color slate500, text_xs ] [ text consentText ]
+                , activeButton
+                ]
+
+            CardConnect ->
+                []
         )
 
 
@@ -343,7 +694,7 @@ jumbotron info =
                                 [ Transition.property "letter-spacing" 500 []
                                 ]
                             ]
-                            { onPress = Nothing, label = el [ inFront (el [ centerX, centerY, Font.bold ] (text info.callToAction)) ] (Wheel.progress info.wheelPercentage primaryColor) }
+                            { onPress = Just OpenSignUpView, label = el [ inFront (el [ centerX, centerY, Font.bold ] (text info.callToAction)) ] (Wheel.progress info.wheelPercentage primaryColor) }
                         ]
                     )
                 ]
@@ -474,7 +825,7 @@ talkingPoints info =
                 [ column [ p8notBottom, space, width (fill |> maximum pointMax), alignTop, centerX, height fill ]
                     [ paragraph [ Font.bold, text_xl ] [ text info.title ]
                     , Input.button [ alignTop ]
-                        { onPress = Nothing
+                        { onPress = Just OpenSignUpView
                         , label =
                             el
                                 [ Font.color info.secondaryColor
@@ -533,3 +884,176 @@ talkingPoints info =
 footer info =
     el [ width fill, Background.color info.backgroundColor, Font.color white, p4 ]
         (el [ width (fill |> maximum maxWidth), centerX ] (text info.copyright))
+
+
+
+-- MARKDOWN
+
+
+markdownView : String -> Result String (List (Element Msg))
+markdownView markdownString =
+    markdownString
+        |> Markdown.Parser.parse
+        |> Result.mapError (\error -> error |> List.map Markdown.Parser.deadEndToString |> String.join "\n")
+        |> Result.andThen (Markdown.Renderer.render elmUiRenderer)
+
+
+elmUiRenderer : Markdown.Renderer.Renderer (Element msg)
+elmUiRenderer =
+    { heading = heading
+    , paragraph =
+        Element.paragraph
+            [ Element.spacing 10 ]
+    , thematicBreak = Element.none
+    , text = Element.text
+    , strong = \content -> Element.row [ Font.bold ] content
+    , emphasis = \content -> Element.row [ Font.italic ] content
+    , strikethrough = \content -> Element.row [ Font.strike ] content
+    , codeSpan = code
+    , link =
+        \{ title, destination } body ->
+            Element.newTabLink
+                [ Element.htmlAttribute (Html.Attributes.style "display" "inline-flex") ]
+                { url = destination
+                , label =
+                    Element.paragraph
+                        [ Font.color (Element.rgb255 0 0 255)
+                        ]
+                        body
+                }
+    , hardLineBreak = Html.br [] [] |> Element.html
+    , image =
+        \image ->
+            case image.title of
+                Just title ->
+                    Element.image [ Element.width Element.fill ] { src = image.src, description = image.alt }
+
+                Nothing ->
+                    Element.image [ Element.width Element.fill ] { src = image.src, description = image.alt }
+    , blockQuote =
+        \children ->
+            Element.column
+                [ Border.widthEach { top = 0, right = 0, bottom = 0, left = 10 }
+                , padding 10
+                , Border.color (Element.rgb255 145 145 145)
+                , Background.color (Element.rgb255 245 245 245)
+                ]
+                children
+    , unorderedList =
+        \items ->
+            Element.column [ Element.spacing 15 ]
+                (items
+                    |> List.map
+                        (\(ListItem task children) ->
+                            Element.row [ Element.spacing 5 ]
+                                [ Element.paragraph
+                                    [ Element.alignTop ]
+                                    ((case task of
+                                        IncompleteTask ->
+                                            Input.defaultCheckbox False
+
+                                        CompletedTask ->
+                                            Input.defaultCheckbox True
+
+                                        NoTask ->
+                                            Element.text ""
+                                     )
+                                        :: Element.text " "
+                                        :: children
+                                    )
+                                ]
+                        )
+                )
+    , orderedList =
+        \startingIndex items ->
+            Element.column [ Element.spacing 50 ]
+                (items
+                    |> List.indexedMap
+                        (\index itemBlocks ->
+                            Element.row [ Element.spacing 5 ]
+                                [ Element.paragraph [ Element.alignTop ]
+                                    (Element.text (String.fromInt (index + startingIndex) ++ ". ") :: itemBlocks)
+                                ]
+                        )
+                )
+    , codeBlock = codeBlock
+    , html = Markdown.Html.oneOf []
+    , table = Element.column []
+    , tableHeader = Element.column []
+    , tableBody = Element.column []
+    , tableRow = Element.row []
+    , tableHeaderCell =
+        \maybeAlignment children ->
+            Element.paragraph [] children
+    , tableCell =
+        \maybeAlignment children ->
+            Element.paragraph [] children
+    }
+
+
+code : String -> Element msg
+code snippet =
+    Element.el
+        [ Background.color
+            (Element.rgba 0 0 0 0.04)
+        , Border.rounded 2
+        , Element.paddingXY 5 3
+        , Font.family
+            [ Font.external
+                { url = "https://fonts.googleapis.com/css?family=Source+Code+Pro"
+                , name = "Source Code Pro"
+                }
+            ]
+        ]
+        (Element.text snippet)
+
+
+codeBlock : { body : String, language : Maybe String } -> Element msg
+codeBlock details =
+    Element.el
+        [ Background.color (Element.rgba 0 0 0 0.03)
+        , Element.htmlAttribute (Html.Attributes.style "white-space" "pre")
+        , Element.padding 20
+        , Font.family
+            [ Font.external
+                { url = "https://fonts.googleapis.com/css?family=Source+Code+Pro"
+                , name = "Source Code Pro"
+                }
+            ]
+        ]
+        (Element.text details.body)
+
+
+heading : { level : Block.HeadingLevel, rawText : String, children : List (Element msg) } -> Element msg
+heading { level, rawText, children } =
+    Element.paragraph
+        [ Font.size
+            (case level of
+                Block.H1 ->
+                    36
+
+                Block.H2 ->
+                    24
+
+                _ ->
+                    20
+            )
+        , Font.bold
+        , Font.family [ Font.typeface "Montserrat" ]
+        , Region.heading (Block.headingLevelToInt level)
+        , Font.center
+        , Element.htmlAttribute
+            (Html.Attributes.attribute "name" (rawTextToId rawText))
+        , Element.htmlAttribute
+            (Html.Attributes.id (rawTextToId rawText))
+        ]
+        children
+
+
+rawTextToId rawText =
+    rawText
+        |> String.split " "
+        |> Debug.log "split"
+        |> String.join "-"
+        |> Debug.log "joined"
+        |> String.toLower

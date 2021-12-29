@@ -49,6 +49,7 @@ type alias Model =
     { viewportWidth : Int
     , viewportHeight : Int
     , currentYear : Int
+    , fullDate : String
     , device : DeviceClass
     }
 
@@ -58,6 +59,7 @@ defaultModel =
     { viewportWidth = 1920
     , viewportHeight = 1080
     , currentYear = 1969
+    , fullDate = "January 1, 1970"
     , device = Desktop
     }
 
@@ -66,17 +68,19 @@ decodeModel decodeValue =
     let
         decodedValue =
             Decode.decodeValue
-                (Decode.map3
-                    (\w h y ->
+                (Decode.map4
+                    (\w h y d ->
                         { viewportWidth = w
                         , viewportHeight = h
                         , currentYear = y
+                        , fullDate = d
                         , device = (Palette.classifyDevice { height = h, width = w }).class
                         }
                     )
                     (Decode.field "width" Decode.int)
                     (Decode.field "height" Decode.int)
                     (Decode.field "year" Decode.int)
+                    (Decode.field "fullDate" Decode.string)
                 )
                 decodeValue
     in

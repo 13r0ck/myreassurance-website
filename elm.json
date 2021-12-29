@@ -8,6 +8,7 @@
     "dependencies": {
         "direct": {
             "andrewMacmurray/elm-simple-animation": "2.3.0",
+            "dillonkearns/elm-markdown": "7.0.0",
             "dillonkearns/elm-pages": "9.0.0",
             "elm/browser": "1.0.2",
             "elm/core": "1.0.5",
@@ -17,6 +18,7 @@
             "elm/url": "1.0.0",
             "elm-community/typed-svg": "7.0.0",
             "mdgriffith/elm-ui": "1.1.8",
+            "rluiten/mailcheck": "5.0.2",
             "rtfeldman/elm-hex": "1.0.0"
         },
         "indirect": {
@@ -44,6 +46,7 @@
             "miniBill/elm-codec": "2.0.0",
             "miniBill/elm-unicode": "1.0.2",
             "noahzgordon/elm-color-extra": "1.0.2",
+            "rluiten/stringdistance": "1.0.4",
             "robinheghan/murmur3": "1.0.0",
             "stil4m/elm-syntax": "7.2.8",
             "stil4m/structured-writer": "1.0.3",
