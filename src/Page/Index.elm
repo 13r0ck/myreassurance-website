@@ -324,6 +324,7 @@ landingView sharedModel model =
             , video
                 { url = "https://player.vimeo.com/video/646433917?h=3bc158f046"
                 , viewportWidth = toFloat sharedModel.viewportWidth
+                , device = sharedModel.device
                 }
             , talkingPoints
                 { titleLeft = False
@@ -892,9 +893,15 @@ talkingPoints info =
 
 
 video info =
-    el [ p16, centerX ]
+    el [ p16, centerX, width fill ]
         (column
-            [ width (maximum maxWidth (info.viewportWidth * 0.6 |> round |> px))
+            [ width
+                (if isPhone info.device then
+                    fill
+
+                 else
+                    maximum maxWidth (info.viewportWidth * 0.6 |> round |> px)
+                )
             , centerX
             , centerY
             , Border.rounded 10
