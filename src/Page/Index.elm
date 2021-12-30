@@ -13,8 +13,9 @@ import Element.Lazy as Lazy
 import Element.Region as Region
 import Head
 import Head.Seo as Seo
-import Html
-import Html.Attributes
+import Html exposing (br, div, iframe)
+import Html.Attributes as Atr exposing (attribute, class, id, property, src)
+import Json.Encode as Encode
 import Mailcheck
 import Markdown.Block as Block exposing (Block, Inline, ListItem(..), Task(..))
 import Markdown.Html
@@ -320,6 +321,10 @@ landingView sharedModel model =
                 , viewportHeight = viewportHeight
                 , device = device
                 }
+            , video
+                { url = "https://player.vimeo.com/video/646433917?h=3bc158f046"
+                , viewportWidth = toFloat sharedModel.viewportWidth
+                }
             , talkingPoints
                 { titleLeft = False
                 , primaryColor = white
@@ -487,19 +492,24 @@ signupScroller info =
         (case info.signupPageTracker of
             UserInfo ->
                 [ column [ width fill ]
-                    [ Input.text [ Font.color slate900 ] { onChange = UpdateEmail, text = info.emailText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Email")) }
-                    , Input.button [ alignRight, text_xs, Font.color red500 ]
-                        { onPress = Just FillCorrectEmail
-                        , label =
-                            text
-                                (case info.suggestedEmail of
-                                    Just ( _, _, email ) ->
-                                        "Did you mean " ++ email ++ "?"
+                    [ Input.text
+                        [ Font.color slate900
+                        , below
+                            (Input.button [ alignRight, text_xs, Font.color red500 ]
+                                { onPress = Just FillCorrectEmail
+                                , label =
+                                    text
+                                        (case info.suggestedEmail of
+                                            Just ( _, _, email ) ->
+                                                "Did you mean " ++ email ++ "?"
 
-                                    Nothing ->
-                                        ""
-                                )
-                        }
+                                            Nothing ->
+                                                ""
+                                        )
+                                }
+                            )
+                        ]
+                        { onChange = UpdateEmail, text = info.emailText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Email")) }
                     ]
                 , Input.text [ Font.color slate900 ] { onChange = UpdateName, text = info.nameText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Name")) }
                 , Input.text [ Font.color slate900 ] { onChange = UpdateAddress, text = info.addressText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Home Address")) }
@@ -879,6 +889,39 @@ talkingPoints info =
                 ]
             )
         ]
+
+
+video info =
+    el [ p16, centerX ]
+        (column
+            [ width (maximum maxWidth (info.viewportWidth * 0.6 |> round |> px))
+            , centerX
+            , centerY
+            , Border.rounded 10
+            , clip
+            ]
+            [ el [ width fill, height fill, centerX, centerY ]
+                (html <|
+                    div
+                        [ Atr.style "padding" "56.25% 0 0 0"
+                        , Atr.style "position" "relative"
+                        ]
+                        [ iframe
+                            [ Atr.style "position" "absolute"
+                            , Atr.style "top" "0"
+                            , Atr.style "left" "0"
+                            , Atr.style "width" "100%"
+                            , Atr.style "height" "100%"
+                            , attribute "frameborder" "0"
+                            , attribute "allow" "autoplay; fullscreen; picture-in-picture"
+                            , property "allowfullscreen" (Encode.bool True)
+                            , src info.url
+                            ]
+                            []
+                        ]
+                )
+            ]
+        )
 
 
 footer info =
