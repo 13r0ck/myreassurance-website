@@ -956,7 +956,7 @@ elmUiRenderer =
     , link =
         \{ title, destination } body ->
             Element.newTabLink
-                [ Element.htmlAttribute (Html.Attributes.style "display" "inline-flex") ]
+                [ Element.htmlAttribute (Atr.style "display" "inline-flex") ]
                 { url = destination
                 , label =
                     Element.paragraph
@@ -1055,7 +1055,7 @@ codeBlock : { body : String, language : Maybe String } -> Element msg
 codeBlock details =
     Element.el
         [ Background.color (Element.rgba 0 0 0 0.03)
-        , Element.htmlAttribute (Html.Attributes.style "white-space" "pre")
+        , Element.htmlAttribute (Atr.style "white-space" "pre")
         , Element.padding 20
         , Font.family
             [ Font.external
@@ -1086,9 +1086,9 @@ heading { level, rawText, children } =
         , Region.heading (Block.headingLevelToInt level)
         , Font.center
         , Element.htmlAttribute
-            (Html.Attributes.attribute "name" (rawTextToId rawText))
+            (Atr.attribute "name" (rawTextToId rawText))
         , Element.htmlAttribute
-            (Html.Attributes.id (rawTextToId rawText))
+            (Atr.id (rawTextToId rawText))
         ]
         children
 
