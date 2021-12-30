@@ -10,7 +10,14 @@ let currentDate = new Date();
 export default {
   load: async function (elmLoaded) {
     const app = await elmLoaded;
-    console.log("App loaded", app);
+
+    app.ports.setCursor.subscribe((pos) => {
+      try {
+        var input = document.activeElement;
+        input.focus();
+        input.setSelectionRange(pos, pos);
+      } catch {}
+    });
   },
   flags: function () {
     return { width: window.innerWidth, height: window.innerHeight, year : ( currentDate.getFullYear()), fullDate : (monthNames[currentDate.getMonth()] + " " + currentDate.getDate() + ", " + currentDate.getFullYear()) };

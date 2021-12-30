@@ -2,6 +2,7 @@ module Page.Index exposing (Data, Model, Msg, page)
 
 import Agreement exposing (agreement)
 import Browser.Events
+import Char exposing (isDigit)
 import DataSource exposing (DataSource)
 import Element exposing (..)
 import Element.Background as Background
@@ -25,6 +26,7 @@ import Page exposing (Page, StaticPayload)
 import Pages.PageUrl exposing (PageUrl)
 import Pages.Url
 import Palette exposing (isPhone, isTabletOrSmaller, text_sm)
+import Ports
 import Process
 import Shared
 import Simple.Animation as Animation exposing (Animation)
@@ -43,7 +45,11 @@ type alias Model =
     , signupView : State
     , nameText : String
     , emailText : String
-    , addressText : String
+    , streetText : String
+    , stateText : String
+    , cityText : String
+    , zipText : String
+    , phoneText : String
     , signupPageTracker : SignUpPage
     , lockScroll : Bool
     , suggestedEmail : Maybe ( String, String, String )
@@ -65,9 +71,14 @@ type Msg
     = WheelHover Int
     | OpenSignUpView
     | CloseSignUpView
+    | Back
     | UpdateName String
     | UpdateEmail String
-    | UpdateAddress String
+    | UpdateStreet String
+    | UpdateCity String
+    | UpdateState String
+    | UpdateZip String
+    | UpdatePhone String
     | LockScroll ()
     | NextSignUpView
     | FillCorrectEmail
@@ -128,7 +139,21 @@ view maybeUrl sharedModel model static =
 
 
 init maybeUrl sharedModel static =
-    ( { wheelPercentage = 0, signupView = Closed, nameText = "", emailText = "", addressText = "", signupPageTracker = UserInfo, lockScroll = False, suggestedEmail = Nothing }, Cmd.none )
+    ( { wheelPercentage = 0
+      , signupView = Closed
+      , nameText = ""
+      , emailText = ""
+      , streetText = ""
+      , stateText = ""
+      , cityText = ""
+      , zipText = ""
+      , phoneText = ""
+      , signupPageTracker = UserInfo
+      , lockScroll = False
+      , suggestedEmail = Nothing
+      }
+    , Cmd.none
+    )
 
 
 update maybeUrl key sharedModel static msg model =
@@ -142,14 +167,37 @@ update maybeUrl key sharedModel static msg model =
         CloseSignUpView ->
             ( { model | signupView = Closed, signupPageTracker = UserInfo, lockScroll = False }, Cmd.none )
 
+        Back ->
+            case model.signupPageTracker of
+                UserInfo ->
+                    ( { model | signupView = Closed, signupPageTracker = UserInfo, lockScroll = False }, Cmd.none )
+
+                Terms ->
+                    ( { model | signupPageTracker = UserInfo }, Cmd.none )
+
+                CardConnect ->
+                    ( { model | signupPageTracker = Terms }, Cmd.none )
+
         UpdateName newName ->
             ( { model | nameText = newName }, Cmd.none )
 
         UpdateEmail newEmail ->
             ( { model | emailText = newEmail, suggestedEmail = Mailcheck.suggest newEmail }, Cmd.none )
 
-        UpdateAddress newAddress ->
-            ( { model | addressText = newAddress }, Cmd.none )
+        UpdateStreet newStreet ->
+            ( { model | streetText = newStreet }, Cmd.none )
+
+        UpdateCity newCity ->
+            ( { model | cityText = newCity }, Cmd.none )
+
+        UpdateState newState ->
+            ( { model | stateText = newState }, Cmd.none )
+
+        UpdateZip newZip ->
+            ( { model | zipText = newZip }, Cmd.none )
+
+        UpdatePhone newPhone ->
+            ( { model | phoneText = contactPhone newPhone model.phoneText }, setPhoneCursor model.phoneText (contactPhone newPhone model.phoneText) )
 
         LockScroll _ ->
             ( { model | lockScroll = True }, Cmd.none )
@@ -388,14 +436,30 @@ signupView sharedModel model info =
             , signupScroller
                 { nameText = model.nameText
                 , emailText = model.emailText
-                , addressText = model.addressText
+                , streetText = model.streetText
+                , stateText = model.stateText
+                , cityText = model.cityText
+                , zipText = model.zipText
+                , phoneText = model.phoneText
                 , suggestedEmail = model.suggestedEmail
                 , signupPageTracker = model.signupPageTracker
                 , fullDate = sharedModel.fullDate
                 , device = sharedModel.device
                 }
             , nextButton
-                { primaryColor = info.primaryColor, secondaryColor = info.secondaryColor, signupPageTracker = model.signupPageTracker, device = sharedModel.device, emailText = model.emailText, nameText = model.nameText, addressText = model.addressText, suggestedEmail = model.suggestedEmail }
+                { primaryColor = info.primaryColor
+                , secondaryColor = info.secondaryColor
+                , signupPageTracker = model.signupPageTracker
+                , device = sharedModel.device
+                , emailText = model.emailText
+                , nameText = model.nameText
+                , streetText = model.streetText
+                , stateText = model.stateText
+                , cityText = model.cityText
+                , zipText = model.zipText
+                , phoneText = model.phoneText
+                , suggestedEmail = model.suggestedEmail
+                }
             ]
         , el [ alignBottom, width fill ] (footer info.footerArgs)
         ]
@@ -481,7 +545,7 @@ signupScroller info =
             column
                 [ Background.color white
                 , pad
-                , s16
+                , s8
                 , centerX
                 , width (fill |> maximum 800)
                 , Font.color slate700
@@ -513,11 +577,15 @@ signupScroller info =
                         { onChange = UpdateEmail, text = info.emailText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Email")) }
                     ]
                 , Input.text [ Font.color slate900 ] { onChange = UpdateName, text = info.nameText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Name")) }
-                , Input.text [ Font.color slate900 ] { onChange = UpdateAddress, text = info.addressText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Home Address")) }
+                , Input.text [ Font.color slate900 ] { onChange = UpdatePhone, text = info.phoneText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Phone Number")) }
+                , Input.text [ Font.color slate900 ] { onChange = UpdateStreet, text = info.streetText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Street Address")) }
+                , Input.text [ Font.color slate900 ] { onChange = UpdateCity, text = info.cityText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "City")) }
+                , Input.text [ Font.color slate900 ] { onChange = UpdateState, text = info.stateText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "State")) }
+                , Input.text [ Font.color slate900 ] { onChange = UpdateZip, text = info.zipText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Zip Code")) }
                 ]
 
             Terms ->
-                case markdownView (Agreement.agreement |> String.replace "[CUSTOMER NAME]" info.nameText |> String.replace "[DATE]" info.fullDate |> String.replace "[ADDRESS]" info.addressText) of
+                case markdownView (Agreement.agreement |> String.replace "[CUSTOMER NAME]" info.nameText |> String.replace "[DATE]" info.fullDate |> String.replace "[ADDRESS]" (String.concat [ info.streetText, ", ", info.cityText, ", ", info.stateText, " ", info.zipText ])) of
                     Ok rendered ->
                         rendered
 
@@ -541,12 +609,12 @@ nextButton info =
             Palette.text_md info.device
 
         consentButtonText =
-            "CONTINUE"
+            "ACCEPT"
 
         consentText =
             "By clicking “" ++ consentButtonText ++ "” you agree to the Services Subscription agreement above."
 
-        button mainColor secondaryColor action =
+        button buttonText mainColor secondaryColor action =
             let
                 defaultStyleing =
                     [ Font.color secondaryColor
@@ -584,29 +652,52 @@ nextButton info =
                             , Font.family [ Font.monospace ]
                             , s4
                             ]
-                            [ text consentButtonText
+                            [ text buttonText
                             ]
                         )
                 }
 
-        activeButton =
-            button info.secondaryColor info.primaryColor (Just NextSignUpView)
+        activeButton text =
+            button text info.secondaryColor info.primaryColor (Just NextSignUpView)
 
-        disabledButton =
-            button slate300 slate500 Nothing
+        disabledButton text =
+            button text slate300 slate500 Nothing
+
+        backButton text =
+            button text info.primaryColor info.secondaryColor (Just Back)
+
+        buttonRow continueButton =
+            row [ s8, centerX ] (backButton "Back" :: continueButton)
     in
     column [ centerX, p8, width (fill |> maximum 450), s8 ]
         (case info.signupPageTracker of
             UserInfo ->
-                if String.length info.nameText >= 5 && String.length info.emailText > 5 && String.length info.addressText > 5 && info.suggestedEmail == Nothing then
-                    [ activeButton ]
+                if
+                    String.length info.nameText
+                        >= 5
+                        && String.length info.emailText
+                        > 5
+                        && String.length info.streetText
+                        > 5
+                        && String.length info.cityText
+                        > 0
+                        && String.length info.zipText
+                        == 5
+                        && String.length info.stateText
+                        > 0
+                        && String.length info.phoneText
+                        == 20
+                        && info.suggestedEmail
+                        == Nothing
+                then
+                    [ buttonRow [ activeButton "Continue" ] ]
 
                 else
-                    [ disabledButton ]
+                    [ buttonRow [ disabledButton "Continue" ] ]
 
             Terms ->
                 [ paragraph [ Font.center, Font.color slate500, text_xs ] [ text consentText ]
-                , activeButton
+                , buttonRow [ activeButton consentButtonText ]
                 ]
 
             CardConnect ->
@@ -1105,3 +1196,126 @@ rawTextToId rawText =
         |> String.split " "
         |> String.join "-"
         |> String.toLower
+
+
+setPhoneCursor : String -> String -> Cmd msg
+setPhoneCursor oldPhone newPhone =
+    let
+        parse val =
+            String.toList (String.filter isDigit (String.replace "+1" "" val))
+
+        index a =
+            a |> Tuple.first
+
+        one a =
+            a |> Tuple.second |> Tuple.first
+
+        two a =
+            a |> Tuple.second |> Tuple.second
+    in
+    -- creates List (index, (oldDigit, newDigit)) and filters for first change returning that number
+    -- the first difference is what matters, so we just take the head and return the modified index
+    case
+        List.head
+            (List.filterMap
+                (\a ->
+                    if not (one a == two a) then
+                        Just (index a)
+
+                    else
+                        Nothing
+                )
+                (List.indexedMap Tuple.pair (List.map2 Tuple.pair (parse oldPhone) (parse newPhone)))
+            )
+    of
+        Just i ->
+            if String.length oldPhone > String.length newPhone then
+                Ports.setCursor
+                    (case i of
+                        0 ->
+                            4
+
+                        1 ->
+                            5
+
+                        2 ->
+                            6
+
+                        3 ->
+                            10
+
+                        4 ->
+                            11
+
+                        5 ->
+                            12
+
+                        n ->
+                            n + 10
+                    )
+
+            else
+                Ports.setCursor
+                    (case i of
+                        0 ->
+                            5
+
+                        1 ->
+                            6
+
+                        2 ->
+                            10
+
+                        3 ->
+                            11
+
+                        4 ->
+                            12
+
+                        n ->
+                            n + 11
+                    )
+
+        Nothing ->
+            Cmd.none
+
+
+contactPhone : String -> String -> String
+contactPhone newPhone oldPhone =
+    if newPhone == "+1 ( " then
+        ""
+
+    else if String.length newPhone < String.length oldPhone then
+        newPhone
+
+    else
+        prettyPhoneNumber newPhone
+
+
+prettyPhoneNumber : String -> String
+prettyPhoneNumber number =
+    let
+        clean =
+            String.filter isDigit (String.replace "+1" "" number)
+    in
+    case String.length clean of
+        0 ->
+            "+1 ("
+
+        1 ->
+            "+1 (" ++ clean
+
+        2 ->
+            "+1 (" ++ clean
+
+        3 ->
+            "+1 (" ++ clean ++ ")  "
+
+        4 ->
+            "+1 (" ++ String.left 3 clean ++ ")  " ++ String.right 1 clean
+
+        5 ->
+            "+1 (" ++ String.left 3 clean ++ ")  " ++ String.right 2 clean
+
+        _ ->
+            "+1 (" ++ String.left 3 clean ++ ")  " ++ String.slice 3 6 clean ++ " - " ++ String.slice 6 10 clean
