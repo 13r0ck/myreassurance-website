@@ -50,6 +50,7 @@ type alias Model =
     , cityText : String
     , zipText : String
     , phoneText : String
+    , termsAccepted : Bool
     , signupPageTracker : SignUpPage
     , lockScroll : Bool
     , suggestedEmail : Maybe ( String, String, String )
@@ -79,6 +80,7 @@ type Msg
     | UpdateState String
     | UpdateZip String
     | UpdatePhone String
+    | UpdateTerms Bool
     | LockScroll ()
     | NextSignUpView
     | FillCorrectEmail
@@ -148,6 +150,7 @@ init maybeUrl sharedModel static =
       , cityText = ""
       , zipText = ""
       , phoneText = ""
+      , termsAccepted = False
       , signupPageTracker = UserInfo
       , lockScroll = False
       , suggestedEmail = Nothing
@@ -173,7 +176,7 @@ update maybeUrl key sharedModel static msg model =
                     ( { model | signupView = Closed, signupPageTracker = UserInfo, lockScroll = False }, Cmd.none )
 
                 Terms ->
-                    ( { model | signupPageTracker = UserInfo }, Cmd.none )
+                    ( { model | termsAccepted = False, signupPageTracker = UserInfo }, Cmd.none )
 
                 CardConnect ->
                     ( { model | signupPageTracker = Terms }, Cmd.none )
@@ -201,6 +204,9 @@ update maybeUrl key sharedModel static msg model =
 
         LockScroll _ ->
             ( { model | lockScroll = True }, Cmd.none )
+
+        UpdateTerms bool ->
+            ( { model | termsAccepted = bool }, Cmd.none )
 
         NextSignUpView ->
             ( { model
@@ -458,6 +464,7 @@ signupView sharedModel model info =
                 , cityText = model.cityText
                 , zipText = model.zipText
                 , phoneText = model.phoneText
+                , termsAccepted = model.termsAccepted
                 , suggestedEmail = model.suggestedEmail
                 }
             ]
@@ -557,7 +564,7 @@ signupScroller info =
         (case info.signupPageTracker of
             UserInfo ->
                 [ column [ width fill ]
-                    [ Input.text
+                    [ Input.email
                         [ Font.color slate900
                         , below
                             (Input.button [ alignRight, text_xs, Font.color red500 ]
@@ -585,7 +592,7 @@ signupScroller info =
                 ]
 
             Terms ->
-                case markdownView (Agreement.agreement |> String.replace "[CUSTOMER NAME]" info.nameText |> String.replace "[DATE]" info.fullDate |> String.replace "[ADDRESS]" (String.concat [ info.streetText, ", ", info.cityText, ", ", info.stateText, " ", info.zipText ])) of
+                case markdownView Agreement.agreement of
                     Ok rendered ->
                         rendered
 
@@ -609,10 +616,10 @@ nextButton info =
             Palette.text_md info.device
 
         consentButtonText =
-            "ACCEPT"
+            "CONTINUE"
 
         consentText =
-            "By clicking “" ++ consentButtonText ++ "” you agree to the Services Subscription agreement above."
+            "Accept Services Subscription Terms and Conditions above."
 
         button buttonText mainColor secondaryColor action =
             let
@@ -620,11 +627,21 @@ nextButton info =
                     [ Font.color secondaryColor
                     , Background.color mainColor
                     , Border.rounded 50
+                    , Border.width 5
+                    , Border.color
+                        (case action of
+                            Just _ ->
+                                white
+
+                            Nothing ->
+                                slate100
+                        )
                     , p5
                     , Transition.properties_
                         [ Transition.transform 500 []
                         , Transition.color 500 []
                         , Transition.backgroundColor 500 []
+                        , Transition.property "box-shadow" 500 []
                         ]
                     ]
 
@@ -696,8 +713,59 @@ nextButton info =
                     [ buttonRow [ disabledButton "Continue" ] ]
 
             Terms ->
-                [ paragraph [ Font.center, Font.color slate500, text_xs ] [ text consentText ]
-                , buttonRow [ activeButton consentButtonText ]
+                let
+                    enabledShadow =
+                        { offset = ( 5, 10 ), size = 5, blur = 10, color = slate300 }
+
+                    disabledShadow =
+                        { offset = ( 0, 0 ), size = 0, blur = 0, color = slate300 }
+                in
+                [ Input.checkbox [ height fill ]
+                    { checked = info.termsAccepted
+                    , icon =
+                        \b ->
+                            el
+                                [ width (px 50)
+                                , centerY
+                                , Font.color
+                                    (if b then
+                                        info.secondaryColor
+
+                                     else
+                                        slate500
+                                    )
+                                , Border.shadow
+                                    (if b then
+                                        enabledShadow
+
+                                     else
+                                        disabledShadow
+                                    )
+                                , Border.width 0
+                                , Border.rounded 1000
+                                , Transition.properties_
+                                    [ Transition.transform 500 []
+                                    , Transition.color 500 []
+                                    , Transition.backgroundColor 500 []
+                                    , Transition.property "box-shadow" 500 []
+                                    ]
+                                ]
+                                (if b then
+                                    checked
+
+                                 else
+                                    unchecked
+                                )
+                    , label = Input.labelRight [ width fill ] (paragraph [ Font.center, Font.color slate500, text_xs ] [ text consentText ])
+                    , onChange = UpdateTerms
+                    }
+                , buttonRow
+                    [ if info.termsAccepted then
+                        activeButton consentButtonText
+
+                      else
+                        disabledButton consentButtonText
+                    ]
                 ]
 
             CardConnect ->
@@ -1082,7 +1150,7 @@ elmUiRenderer =
                 children
     , unorderedList =
         \items ->
-            Element.column [ Element.spacing 15 ]
+            Element.column [ Element.spacing 15, paddingEach { left = 30, right = 0, bottom = 0, top = 0 } ]
                 (items
                     |> List.map
                         (\(ListItem task children) ->

@@ -104,6 +104,30 @@ sold =
             ]
 
 
+unchecked =
+    html <|
+        Svg.svg
+            [ Atr.width "100%", Atr.height "100%", Atr.viewBox "0 0 24 24", Atr.fill "#cbd5e1", Atr.stroke "currentColor" ]
+            [ Svg.path
+                [ Atr.d "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                ]
+                []
+            ]
+
+
+checked =
+    html <|
+        Svg.svg
+            [ Atr.width "100%", Atr.height "100%", Atr.viewBox "0 0 20 20", Atr.fill "currentColor" ]
+            [ Svg.path
+                [ Atr.fillRule "evenodd"
+                , Atr.clipRule "evenodd"
+                , Atr.d "M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                ]
+                []
+            ]
+
+
 
 -- HEIGHT
 
