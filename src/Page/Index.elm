@@ -303,6 +303,7 @@ landingView sharedModel model =
             , copyright = "© " ++ String.fromInt sharedModel.currentYear ++ " MyREassurance"
             , downloadText = "Notice Of Transfer"
             , downloadLink = "/Notice of Transfer 01-03-2022.docx"
+            , device = sharedModel.device
             }
     in
     Element.layoutWith
@@ -602,7 +603,7 @@ signupScroller info =
                         [ column [ Font.center, s8, centerX, Font.color red500 ] [ el [ centerX ] (text "View failed. Please contact website administrator."), el [ centerX ] (text errors) ] ]
 
             CardConnect ->
-                [ text "This is a placeholder for the CardConnect iframe" ]
+                [ paragraph [ Font.center ] [ text "This is a placeholder for the CardConnect iframe" ] ]
         )
 
 
@@ -629,15 +630,6 @@ nextButton info =
                     [ Font.color secondaryColor
                     , Background.color mainColor
                     , Border.rounded 50
-                    , Border.width 5
-                    , Border.color
-                        (case action of
-                            Just _ ->
-                                white
-
-                            Nothing ->
-                                slate100
-                        )
                     , p5
                     , Transition.properties_
                         [ Transition.transform 500 []
@@ -686,7 +678,14 @@ nextButton info =
             button text info.primaryColor info.secondaryColor (Just Back)
 
         buttonRow continueButton =
-            row [ s8, centerX ] (backButton "Back" :: continueButton)
+            (if isPhone info.device then
+                column
+
+             else
+                row
+            )
+                [ s8, centerX ]
+                (backButton "Back" :: continueButton)
     in
     column [ centerX, p8, width (fill |> maximum 450), s8 ]
         (case info.signupPageTracker of
@@ -809,7 +808,7 @@ jumbotron info =
 
         pad =
             if isPhone info.device then
-                p2
+                p3
 
             else
                 p8
@@ -913,7 +912,7 @@ jumbotron info =
                         0
                     )
                 ]
-                (column [ p8, s8 ]
+                (column [ pad, s8 ]
                     [ paragraph [ Font.bold, text_lg ] [ text info.subTitle ]
                     , column [ text_md, s3 ] (List.map (\t -> paragraph [] [ text t ]) info.content)
                     ]
@@ -1093,7 +1092,23 @@ video info =
 
 
 footer info =
-    row [ width fill, Background.color info.backgroundColor, Font.color white, p4 ]
+    (if isPhone info.device then
+        column
+
+     else
+        row
+    )
+        [ width fill
+        , Background.color info.backgroundColor
+        , Font.color white
+        , if isPhone info.device then
+            Font.center
+
+          else
+            Font.alignLeft
+        , p4
+        , s4
+        ]
         [ el [ width (fill |> maximum maxWidth), centerX ] (text info.copyright)
         , download [ width (fill |> maximum maxWidth), alignRight ] { label = text info.downloadText, url = info.downloadLink }
         ]
