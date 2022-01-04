@@ -7,7 +7,7 @@ agreement =
 
 These Services Subscription TERMS AND CONDITIONS (this &quot; **Agreement**&quot;), dated as of the date Customer affirmatively agrees hereto (the &quot; **Effective Date**&quot;), by checking the box set forth on Service Provider’s website (or as otherwise indicated by Customer’s request for the Services) and is by and between MyREassurance, Inc., a Colorado corporation, with offices located at 8827 Cactus Flower Way, Highlands Ranch, CO 80126 (&quot; **Service Provider**&quot;) and you, an individual with an address is located as set forth in the account information you have completed (&quot; **Customer**&quot; and together with Service Provider, the &quot; **Parties**&quot;, and each a &quot; **Party**&quot;).
 
-WHEREAS, Service Provider runs a subscription based real estate service that allows a customer to sell two (2) properties located in the Denver, Colorado metro area, within a five (5) year period without paying a listing agent commission but with the full level of service from a top real estate agent (the &quot; **Services**&quot;); and
+WHEREAS, Service Provider runs a subscription based real estate service that allows a customer to sell two (2) residential properties (commercial properties are specifically excluded) located in the Denver, Colorado metro area, within a five (5) year period without paying a listing agent commission but with the full level of service from a top real estate agent (the &quot; **Services**&quot;); and
 
 WHEREAS, Customer desires to retain Service Provider to provide such Services, and Service Provider is willing to perform such Services under the terms and conditions hereinafter set forth;
 
