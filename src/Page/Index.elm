@@ -301,6 +301,8 @@ landingView sharedModel model =
         footerArgs =
             { backgroundColor = neutral600
             , copyright = "© " ++ String.fromInt sharedModel.currentYear ++ " MyREassurance"
+            , downloadText = "Notice Of Transfer"
+            , downloadLink = "/Notice of Transfer 01-03-2022.docx"
             }
     in
     Element.layoutWith
@@ -1091,8 +1093,10 @@ video info =
 
 
 footer info =
-    el [ width fill, Background.color info.backgroundColor, Font.color white, p4 ]
-        (el [ width (fill |> maximum maxWidth), centerX ] (text info.copyright))
+    row [ width fill, Background.color info.backgroundColor, Font.color white, p4 ]
+        [ el [ width (fill |> maximum maxWidth), centerX ] (text info.copyright)
+        , download [ width (fill |> maximum maxWidth), alignRight ] { label = text info.downloadText, url = info.downloadLink }
+        ]
 
 
 
