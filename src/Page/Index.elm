@@ -1053,7 +1053,15 @@ talkingPoints info =
 
 
 video info =
-    el [ p16, centerX, width fill ]
+    el
+        [ if isPhone info.device then
+            p4
+
+          else
+            p8
+        , centerX
+        , width fill
+        ]
         (column
             [ width
                 (if isPhone info.device then
