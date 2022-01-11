@@ -61,6 +61,7 @@ type SignUpPage
     = UserInfo
     | Terms
     | CardConnect
+    | ContactInfo
 
 
 type State
@@ -71,6 +72,7 @@ type State
 type Msg
     = WheelHover Int
     | OpenSignUpView
+    | OpenContactUs
     | CloseSignUpView
     | Back
     | UpdateName String
@@ -167,19 +169,29 @@ update maybeUrl key sharedModel static msg model =
         OpenSignUpView ->
             ( { model | signupView = Open }, Task.perform LockScroll (Process.sleep 500) )
 
+        OpenContactUs ->
+            ( { model | signupView = Open, signupPageTracker = ContactInfo }, Task.perform LockScroll (Process.sleep 500) )
+
         CloseSignUpView ->
             ( { model | signupView = Closed, signupPageTracker = UserInfo, lockScroll = False }, Cmd.none )
 
         Back ->
+            let
+                close =
+                    ( { model | signupView = Closed, signupPageTracker = UserInfo, lockScroll = False }, Cmd.none )
+            in
             case model.signupPageTracker of
                 UserInfo ->
-                    ( { model | signupView = Closed, signupPageTracker = UserInfo, lockScroll = False }, Cmd.none )
+                    close
 
                 Terms ->
                     ( { model | termsAccepted = False, signupPageTracker = UserInfo }, Cmd.none )
 
                 CardConnect ->
                     ( { model | signupPageTracker = Terms }, Cmd.none )
+
+                ContactInfo ->
+                    close
 
         UpdateName newName ->
             ( { model | nameText = newName }, Cmd.none )
@@ -220,6 +232,9 @@ update maybeUrl key sharedModel static msg model =
 
                         CardConnect ->
                             CardConnect
+
+                        ContactInfo ->
+                            ContactInfo
               }
             , Cmd.none
             )
@@ -298,12 +313,18 @@ landingView sharedModel model =
         logo =
             row [] [ text "My", el [ Font.color primaryColor ] (text "RE"), text "assurance" ]
 
+        spacer =
+            el [ p16 ] none
+
         footerArgs =
             { backgroundColor = neutral600
             , copyright = "© " ++ String.fromInt sharedModel.currentYear ++ " MyREassurance"
-            , downloadText = "Notice Of Transfer"
+            , downloadText = "Transfer Your Service Here"
             , downloadLink = "/Notice of Transfer 01-03-2022.docx"
             , device = sharedModel.device
+            , contactText = "Contact Us"
+            , onContactClick = OpenContactUs
+            , tracker = model.signupPageTracker
             }
     in
     Element.layoutWith
@@ -410,6 +431,7 @@ landingView sharedModel model =
                 , viewportHeight = viewportHeight
                 , device = device
                 }
+            , spacer
             , footer
                 footerArgs
             ]
@@ -440,6 +462,7 @@ signupView sharedModel model info =
             [ signUpTitle
                 { title = "Create Your Account"
                 , subTitle = "Be one of the first 100 to sign up!"
+                , tracker = model.signupPageTracker
                 , device = sharedModel.device
                 }
             , signupScroller
@@ -454,6 +477,14 @@ signupView sharedModel model info =
                 , signupPageTracker = model.signupPageTracker
                 , fullDate = sharedModel.fullDate
                 , device = sharedModel.device
+                , contactPhotoUrl = "/img/contactPhoto.png"
+                , contactPhotoAlt = "Zach Zaleski"
+                , email = "Zach@TheRightPriceGroup.com"
+                , emailIcon = emailSvg
+                , name = "Zach Zaleski"
+                , nameIcon = user
+                , phone = "(720) 210 - 3668"
+                , phoneIcon = phoneSvg
                 }
             , nextButton
                 { primaryColor = info.primaryColor
@@ -518,10 +549,15 @@ signUpTitle info =
         text_2xl =
             Palette.text_2xl info.device
     in
-    column [ centerX, s4 ]
-        [ paragraph [ Font.center, Font.extraBold, text_xl ] [ text info.title ]
-        , el [ centerX ] (paragraph [] [ text info.subTitle ])
-        ]
+    case info.tracker of
+        ContactInfo ->
+            none
+
+        _ ->
+            column [ centerX, s4 ]
+                [ paragraph [ Font.center, Font.extraBold, text_xl ] [ text info.title ]
+                , el [ centerX ] (paragraph [] [ text info.subTitle ])
+                ]
 
 
 signupScroller info =
@@ -562,6 +598,9 @@ signupScroller info =
                 , Border.rounded 20
                 , Border.shadow { offset = ( 5, 10 ), size = 5, blur = 20, color = slate300 }
                 ]
+
+        icon =
+            [ width (px 40), Font.color primaryColor ]
     in
     frame
         (case info.signupPageTracker of
@@ -604,6 +643,23 @@ signupScroller info =
 
             CardConnect ->
                 [ paragraph [ Font.center ] [ text "This is a placeholder for the CardConnect iframe" ] ]
+
+            ContactInfo ->
+                [ column [ width fill, s16 ]
+                    [ el [ Border.width 8, Border.color primaryColor, width (px 200), height (px 200), Border.rounded 1000, clip, centerX ]
+                        (image
+                            [ width fill, height fill ]
+                            { src = info.contactPhotoUrl
+                            , description = info.contactPhotoAlt
+                            }
+                        )
+                    , column [ centerX, s8, text_sm ]
+                        [ row [ s4 ] [ el icon info.nameIcon, text info.name ]
+                        , link [] { url = "mailto:" ++ info.email, label = row [ s4 ] [ el icon info.emailIcon, text info.email ] }
+                        , link [] { url = "tele:" ++ info.phone, label = row [ s4 ] [ el icon info.phoneIcon, text info.phone ] }
+                        ]
+                    ]
+                ]
         )
 
 
@@ -771,6 +827,9 @@ nextButton info =
 
             CardConnect ->
                 []
+
+            ContactInfo ->
+                [ buttonRow [] ]
         )
 
 
@@ -1060,7 +1119,6 @@ video info =
           else
             p8
         , centerX
-        , width fill
         ]
         (column
             [ width
@@ -1068,7 +1126,7 @@ video info =
                     fill
 
                  else
-                    maximum maxWidth (info.viewportWidth * 0.6 |> round |> px)
+                    maximum 1500 (info.viewportWidth * 0.6 |> round |> px)
                 )
             , centerX
             , centerY
@@ -1118,6 +1176,16 @@ footer info =
         , s4
         ]
         [ el [ width (fill |> maximum maxWidth), centerX ] (text info.copyright)
+        , Input.button [ centerX ]
+            { onPress = Just info.onContactClick
+            , label =
+                case info.tracker of
+                    ContactInfo ->
+                        none
+
+                    _ ->
+                        text info.contactText
+            }
         , download [ width (fill |> maximum maxWidth), alignRight ] { label = text info.downloadText, url = info.downloadLink }
         ]
 

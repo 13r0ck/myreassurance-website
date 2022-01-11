@@ -128,6 +128,45 @@ checked =
             ]
 
 
+user =
+    html <|
+        Svg.svg
+            [ Atr.width "100%", Atr.height "100%", Atr.viewBox "0 0 20 20", Atr.fill "currentColor" ]
+            [ Svg.path
+                [ Atr.fillRule "evenodd"
+                , Atr.clipRule "evenodd"
+                , Atr.d "M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                ]
+                []
+            ]
+
+
+phoneSvg =
+    html <|
+        Svg.svg
+            [ Atr.width "100%", Atr.height "100%", Atr.viewBox "0 0 20 20", Atr.fill "currentColor" ]
+            [ Svg.path
+                [ Atr.fillRule "evenodd"
+                , Atr.clipRule "evenodd"
+                , Atr.d "M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z"
+                ]
+                []
+            ]
+
+
+emailSvg =
+    html <|
+        Svg.svg
+            [ Atr.width "100%", Atr.height "100%", Atr.viewBox "0 0 20 20", Atr.fill "currentColor" ]
+            [ Svg.path
+                [ Atr.fillRule "evenodd"
+                , Atr.clipRule "evenodd"
+                , Atr.d "M14.243 5.757a6 6 0 10-.986 9.284 1 1 0 111.087 1.678A8 8 0 1118 10a3 3 0 01-4.8 2.401A4 4 0 1114 10a1 1 0 102 0c0-1.537-.586-3.07-1.757-4.243zM12 10a2 2 0 10-4 0 2 2 0 004 0z"
+                ]
+                []
+            ]
+
+
 
 -- HEIGHT
 
