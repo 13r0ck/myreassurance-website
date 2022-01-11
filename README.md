@@ -7,4 +7,4 @@ using `npm start`
 
 The biggest hidden feature of this project is the design flexibiity. The best example of this is the website theme. Edit the `priamaryColor` (~ Line 280 )variable to anything you would like (supports all tailwind colors) and run locally.
 
-![demo](https://github.com/13r0ck/myreassurance-website/blob/main/public/img/nodes.png?raw=true)
+![demo](https://github.com/13r0ck/myreassurance-website/blob/main/public/img/demo.gif?raw=true)
