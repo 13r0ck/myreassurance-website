@@ -38,6 +38,7 @@ import Task
 import Utils.Transition as Transition
 import View exposing (View)
 import Wheel
+import Svgs exposing (..)
 
 
 type alias Model =
@@ -316,6 +317,23 @@ landingView sharedModel model =
         spacer =
             el [ p16 ] none
 
+        bottomText =
+            { title = "Membership and services are only being offered to the first 100 of our select clientele to sign up."
+            , content = [ "Don’t miss you chance to be among the first to claim your spot for this amazing cost savings opportunity and sign up TODAY!" ] }
+
+        secondSectionPoints =
+            [ { title = "Transfer your subscription to anyone at anytime for free!"
+                , content =
+                    [ "Use one sale and transfer the last sale for use by a friend or family member, or transfer both sales." ]
+                }
+            , { title = "The lowest cost way to sell real estate on the market today!"
+                , content =
+                    [ "Only $99 to start and sell two properties within two years."
+                    , "No limit on the sales price of your home."
+                    ]
+                }
+            ]
+
         footerArgs =
             { backgroundColor = neutral600
             , copyright = "© " ++ String.fromInt sharedModel.currentYear ++ " MyREassurance"
@@ -411,9 +429,7 @@ landingView sharedModel model =
                 , primaryColor = white
                 , secondaryColor = primaryColor
                 , bottomImage = Nothing
-                , bottomText = Just
-                    { title = "Membership and services are only being offered to the first 100 of our select clientele to sign up"
-                    , content = [ "Don’t miss you chance to be among the first to claim your spot for this amazing cost savings opportunity and sign up TODAY!" ] }
+                , bottomText = Just bottomText
                 , title = "No listing commissions, ibuyer fees or transfer fees!"
                 , callToAction =
                     { image = "/img/right.svg"
@@ -421,17 +437,7 @@ landingView sharedModel model =
                     , text = "GET STARTED"
                     }
                 , points =
-                    [ { title = "Transfer your subscription to anyone at anytime for free!"
-                      , content =
-                            [ "Use one sale and transfer the last sale for use by a friend or family member, or transfer both sales." ]
-                      }
-                    , { title = "The lowest cost way to sell real estate on the market today!"
-                      , content =
-                            [ "Only $99 to start and sell two properties within two years."
-                            , "No limit on the sales price of your home."
-                            ]
-                      }
-                    ]
+                    (if isTabletOrSmaller device then bottomText :: secondSectionPoints else secondSectionPoints)
                 , viewportWidth = viewportWidth
                 , viewportHeight = viewportHeight
                 , device = device
@@ -995,7 +1001,7 @@ talkingPoints info =
         point content =
             (case info.bottomText of
                 Just _ ->
-                    column [ s3, height (px 350) ]
+                    if isTabletOrSmaller device then column [ s3 ] else column [ s3, height (px 350) ]
                 Nothing -> 
                     column [ s3 ]
             )
@@ -1062,8 +1068,8 @@ talkingPoints info =
               else
                 List.reverse
              )
-                [ column [ p8notBottom, space, width (fill |> maximum pointMax), alignTop, centerX, height fill ]
-                    [ paragraph [ Font.bold, text_xl ] [ text info.title ]
+                [ column [ p8notBottom, s16, width (fill |> maximum pointMax), alignTop, centerX, height fill ]
+                    [ column [height (if isTabletOrSmaller device then fill else (px 350 )), space] [ paragraph [ Font.bold, text_xl ] [ text info.title ]
                     , Input.button [ alignTop ]
                         { onPress = Just OpenSignUpView
                         , label =
@@ -1094,10 +1100,11 @@ talkingPoints info =
                                     ]
                                 )
                         }
+                    ]
                     , case info.bottomImage of
                         Just img ->
                             if not (isTabletOrSmaller device) then
-                                el [ height (px 300), centerX, moveDown 5 ] img
+                                el [ height (px 300), centerX, moveDown 5, alignBottom] img
 
                             else
                                 none
