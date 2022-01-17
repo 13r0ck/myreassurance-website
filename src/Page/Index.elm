@@ -364,6 +364,7 @@ landingView sharedModel model =
                 , content =
                     [ "Save money and recive top tier service!"
                     , "Cheaper than any ibuyer or discount broker in the market today! Never pay a listing commision EVER!"
+                    , "Membership and services are only being offered to the first 100 of our select clientele to sign up. Don’t miss you chance to be among the first to claim your spot for this amazing cost savings opportunity and sign up TODAY!"
                     ]
                 , viewportWidth = viewportWidth
                 , viewportHeight = viewportHeight
@@ -374,6 +375,7 @@ landingView sharedModel model =
                 , primaryColor = primaryColor
                 , secondaryColor = white
                 , bottomImage = Just sold
+                , bottomText = Nothing
                 , title = "Never pay a listing commission or an ibuyer convivence fee."
                 , callToAction =
                     { image = "/img/right.svg"
@@ -409,6 +411,9 @@ landingView sharedModel model =
                 , primaryColor = white
                 , secondaryColor = primaryColor
                 , bottomImage = Nothing
+                , bottomText = Just
+                    { title = "Membership and services are only being offered to the first 100 of our select clientele to sign up"
+                    , content = [ "Don’t miss you chance to be among the first to claim your spot for this amazing cost savings opportunity and sign up TODAY!" ] }
                 , title = "No listing commissions, ibuyer fees or transfer fees!"
                 , callToAction =
                     { image = "/img/right.svg"
@@ -882,7 +887,7 @@ jumbotron info =
     column
         [ width (fill |> maximum 1200)
         , centerX
-        , height (px info.viewportHeight |> maximum 1200 |> minimum 900)
+        , height (px info.viewportHeight |> maximum 1200 |> minimum 1000)
         , inFront
             (el
                 [ height (px 500)
@@ -973,7 +978,7 @@ jumbotron info =
                 ]
                 (column [ pad, s8 ]
                     [ paragraph [ Font.bold, text_lg ] [ text info.subTitle ]
-                    , column [ text_md, s3 ] (List.map (\t -> paragraph [] [ text t ]) info.content)
+                    , column [ text_md, s6 ] (List.map (\t -> paragraph [] [ text t ]) info.content)
                     ]
                 )
             )
@@ -988,7 +993,12 @@ talkingPoints info =
             500
 
         point content =
-            column [ s3 ]
+            (case info.bottomText of
+                Just _ ->
+                    column [ s3, height (px 350) ]
+                Nothing -> 
+                    column [ s3 ]
+            )
                 [ paragraph [ text_lg, Font.bold ] [ text content.title ]
                 , column [ text_md, s2 ] (List.map (\t -> paragraph [] [ text t ]) content.content)
                 ]
@@ -1094,18 +1104,18 @@ talkingPoints info =
 
                         Nothing ->
                             none
+                    , case info.bottomText of
+                        Just bottomText ->
+                            if not (isTabletOrSmaller device) then
+                                el [ s16, centerX, width (fill |> maximum pointMax) ] (point bottomText)
+
+                            else
+                                none
+
+                        Nothing ->
+                            none
                     ]
                 , column [ p8, s16, centerX, width (fill |> maximum pointMax) ] (List.map point info.points)
-                , case info.bottomImage of
-                    Just img ->
-                        if isTabletOrSmaller device then
-                            el [ height (px 300), centerX, moveDown 5 ] img
-
-                        else
-                            none
-
-                    Nothing ->
-                        none
                 ]
             )
         ]
