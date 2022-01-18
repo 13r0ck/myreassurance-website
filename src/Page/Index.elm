@@ -115,7 +115,7 @@ head static =
         { canonicalUrlOverride = Just "MyREassurance.com"
         , siteName = "MyREAsurance"
         , image =
-            { url = Pages.Url.external "https://myreassurance/img/seoimage.jpg"
+            { url = Pages.Url.external "https://myreassurance.com/img/seoimage.jpg"
             , alt = "A happy client's sold home."
             , dimensions = Just { height = 500, width = 800 }
             , mimeType = Nothing
