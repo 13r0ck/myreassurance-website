@@ -111,8 +111,8 @@ head :
     StaticPayload Data RouteParams
     -> List Head.Tag
 head static =
-    Seo.summary
-        { canonicalUrlOverride = Nothing
+    Seo.summaryLarge
+        { canonicalUrlOverride = Just "MyREassurance.com"
         , siteName = "MyREAsurance"
         , image =
             { url = Pages.Url.external "https://myreassurance/img/seoimage.jpg"
