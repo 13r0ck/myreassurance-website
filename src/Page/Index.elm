@@ -893,7 +893,7 @@ jumbotron info =
     column
         [ width (fill |> maximum 1200)
         , centerX
-        , height (px info.viewportHeight |> maximum 1200 |> minimum 1000)
+        , height (px info.viewportHeight |> minimum (if isPhone info.device then 1200 else 1000))
         , inFront
             (el
                 [ height (px 500)
@@ -989,7 +989,7 @@ jumbotron info =
                 )
             )
         ]
-        [ el [ width (px info.viewportWidth), alignBottom, centerX, Font.color primaryColor, moveDown 1 ] (stackImages none info.footerImages primaryColor)
+        [ el [ width (px info.viewportWidth |> minimum 800), alignBottom, centerX, Font.color primaryColor, moveDown 1 ] (stackImages none info.footerImages primaryColor)
         ]
 
 
