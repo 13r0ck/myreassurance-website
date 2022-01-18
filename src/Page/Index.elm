@@ -22,6 +22,7 @@ import Markdown.Block as Block exposing (Block, Inline, ListItem(..), Task(..))
 import Markdown.Html
 import Markdown.Parser
 import Markdown.Renderer
+import MimeType exposing (..)
 import Page exposing (Page, StaticPayload)
 import Pages.PageUrl exposing (PageUrl)
 import Pages.Url
@@ -33,12 +34,12 @@ import Simple.Animation as Animation exposing (Animation)
 import Simple.Animation.Animated as Animated
 import Simple.Animation.Property as Property
 import Simple.Transition as Transition
+import Svgs exposing (..)
 import Tailwind exposing (..)
 import Task
 import Utils.Transition as Transition
 import View exposing (View)
 import Wheel exposing (to255)
-import Svgs exposing (..)
 
 
 type alias Model =
@@ -114,9 +115,9 @@ head static =
         { canonicalUrlOverride = Nothing
         , siteName = "MyREAsurance"
         , image =
-            { url = Pages.Url.external "TODO"
-            , alt = "elm-pages logo"
-            , dimensions = Nothing
+            { url = Pages.Url.external "https://myreassurance/seoimage.jpg"
+            , alt = "A happy client's sold home."
+            , dimensions = Just { height = 500, width = 800 }
             , mimeType = Nothing
             }
         , description = "Never pay a listing commission or an ibuyer convivence fee. First ever subscription based real estate service!"
@@ -319,19 +320,20 @@ landingView sharedModel model =
 
         bottomText =
             { title = "Membership and services are only being offered to the first 100 of our select clientele to sign up."
-            , content = [ "Don’t miss you chance to be among the first to claim your spot for this amazing cost savings opportunity and sign up TODAY!" ] }
+            , content = [ "Don’t miss you chance to be among the first to claim your spot for this amazing cost savings opportunity and sign up TODAY!" ]
+            }
 
         secondSectionPoints =
             [ { title = "Transfer your subscription to anyone at anytime for free!"
-                , content =
+              , content =
                     [ "Use one sale and transfer the last sale for use by a friend or family member, or transfer both sales." ]
-                }
+              }
             , { title = "The lowest cost way to sell real estate on the market today!"
-                , content =
+              , content =
                     [ "Only $99 to start and sell two properties within two years."
                     , "No limit on the sales price of your home."
                     ]
-                }
+              }
             ]
 
         footerArgs =
@@ -437,7 +439,11 @@ landingView sharedModel model =
                     , text = "GET STARTED"
                     }
                 , points =
-                    (if isTabletOrSmaller device then bottomText :: secondSectionPoints else secondSectionPoints)
+                    if isTabletOrSmaller device then
+                        bottomText :: secondSectionPoints
+
+                    else
+                        secondSectionPoints
                 , viewportWidth = viewportWidth
                 , viewportHeight = viewportHeight
                 , device = device
@@ -893,7 +899,16 @@ jumbotron info =
     column
         [ width (fill |> maximum 1200)
         , centerX
-        , height (px info.viewportHeight |> minimum (if isPhone info.device then 1200 else 1000))
+        , height
+            (px info.viewportHeight
+                |> minimum
+                    (if isPhone info.device then
+                        1200
+
+                     else
+                        1000
+                    )
+            )
         , inFront
             (el
                 [ height (px 500)
@@ -1001,8 +1016,13 @@ talkingPoints info =
         point content =
             (case info.bottomText of
                 Just _ ->
-                    if isTabletOrSmaller device then column [ s3 ] else column [ s3, height (px 350) ]
-                Nothing -> 
+                    if isTabletOrSmaller device then
+                        column [ s3 ]
+
+                    else
+                        column [ s3, height (px 350) ]
+
+                Nothing ->
                     column [ s3 ]
             )
                 [ paragraph [ text_lg, Font.bold ] [ text content.title ]
@@ -1069,42 +1089,52 @@ talkingPoints info =
                 List.reverse
              )
                 [ column [ p8notBottom, s16, width (fill |> maximum pointMax), alignTop, centerX, height fill ]
-                    [ column [height (if isTabletOrSmaller device then fill else (px 350 )), space] [ paragraph [ Font.bold, text_xl ] [ text info.title ]
-                    , Input.button [ alignTop ]
-                        { onPress = Just OpenSignUpView
-                        , label =
-                            el
-                                [ Font.color info.secondaryColor
-                                , Background.color info.primaryColor
-                                , Border.rounded 50
-                                , Border.width 1
-                                , Transition.properties_
-                                    [ Transition.property "background-color" 500 []
-                                    , Transition.color 500 []
+                    [ column
+                        [ height
+                            (if isTabletOrSmaller device then
+                                fill
+
+                             else
+                                px 350
+                            )
+                        , space
+                        ]
+                        [ paragraph [ Font.bold, text_xl ] [ text info.title ]
+                        , Input.button [ alignTop ]
+                            { onPress = Just OpenSignUpView
+                            , label =
+                                el
+                                    [ Font.color info.secondaryColor
+                                    , Background.color info.primaryColor
+                                    , Border.rounded 50
+                                    , Border.width 1
+                                    , Transition.properties_
+                                        [ Transition.property "background-color" 500 []
+                                        , Transition.color 500 []
+                                        ]
+                                    , mouseOver
+                                        [ Background.color info.secondaryColor
+                                        , Font.color info.primaryColor
+                                        , Border.color info.secondaryColor
+                                        ]
+                                    , p5
                                     ]
-                                , mouseOver
-                                    [ Background.color info.secondaryColor
-                                    , Font.color info.primaryColor
-                                    , Border.color info.secondaryColor
-                                    ]
-                                , p5
-                                ]
-                                (row
-                                    [ paddingXY 20 0
-                                    , centerX
-                                    , Font.family [ Font.monospace ]
-                                    , s4
-                                    ]
-                                    [ text info.callToAction.text
-                                    , el [ width (px 25) ] rightArrow
-                                    ]
-                                )
-                        }
-                    ]
+                                    (row
+                                        [ paddingXY 20 0
+                                        , centerX
+                                        , Font.family [ Font.monospace ]
+                                        , s4
+                                        ]
+                                        [ text info.callToAction.text
+                                        , el [ width (px 25) ] rightArrow
+                                        ]
+                                    )
+                            }
+                        ]
                     , case info.bottomImage of
                         Just img ->
                             if not (isTabletOrSmaller device) then
-                                el [ height (px 300), centerX, moveDown 5, alignBottom] img
+                                el [ height (px 300), centerX, moveDown 5, alignBottom ] img
 
                             else
                                 none
@@ -1500,13 +1530,15 @@ prettyPhoneNumber number =
         _ ->
             "+1 (" ++ String.left 3 clean ++ ")  " ++ String.slice 3 6 clean ++ " - " ++ String.slice 6 10 clean
 
+
 stackImages acc images color =
     case images of
         first :: rest ->
-            stackImages (el [width fill, height fill, Font.color color, inFront (acc)] (first)) rest (lightenColor 50 color)
+            stackImages (el [ width fill, height fill, Font.color color, inFront acc ] first) rest (lightenColor 50 color)
 
         [] ->
             acc
+
 
 lightenColor by color =
     Element.toRgb color
