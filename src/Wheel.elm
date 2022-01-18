@@ -1,7 +1,7 @@
 -- Copy pasted from andrewMacmurray/elm-simple-animation/main/examples. Thank you!
 
 
-module Wheel exposing (progress)
+module Wheel exposing (progress, to255)
 
 import Element exposing (Element)
 import Hex

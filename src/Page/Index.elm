@@ -37,7 +37,7 @@ import Tailwind exposing (..)
 import Task
 import Utils.Transition as Transition
 import View exposing (View)
-import Wheel
+import Wheel exposing (to255)
 import Svgs exposing (..)
 
 
@@ -376,7 +376,7 @@ landingView sharedModel model =
                 { title = logo
                 , callToAction = "Join Now"
                 , image = "/img/house.jpg"
-                , footerImage = skyline
+                , footerImages = [ skylineFront, skylineMiddle, skylineBack ]
                 , subTitle = "Everything you want from a top real estate agent."
                 , wheelPercentage = wheelPercentage
                 , content =
@@ -989,7 +989,7 @@ jumbotron info =
                 )
             )
         ]
-        [ el [ width (px maxWidth), alignBottom, centerX, Font.color primaryColor, moveDown 1 ] skyline
+        [ el [ width (px info.viewportWidth), alignBottom, centerX, Font.color primaryColor, moveDown 1 ] (stackImages none info.footerImages primaryColor)
         ]
 
 
@@ -1499,3 +1499,22 @@ prettyPhoneNumber number =
 
         _ ->
             "+1 (" ++ String.left 3 clean ++ ")  " ++ String.slice 3 6 clean ++ " - " ++ String.slice 6 10 clean
+
+stackImages acc images color =
+    case images of
+        first :: rest ->
+            stackImages (el [width fill, height fill, Font.color color, inFront (acc)] (first)) rest (lightenColor 50 color)
+
+        [] ->
+            acc
+
+lightenColor by color =
+    Element.toRgb color
+        |> (\rgb ->
+                fromRgb255
+                    { red = (rgb.red |> to255) + by
+                    , green = (rgb.green |> to255) + by
+                    , blue = (rgb.blue |> to255) + by
+                    , alpha = 1
+                    }
+           )
