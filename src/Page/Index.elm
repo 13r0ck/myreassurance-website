@@ -51,24 +51,32 @@ type alias Model =
     , stateText : String
     , cityText : String
     , zipText : String
+    , passwordText : String
     , phoneText : String
     , termsAccepted : Bool
     , signupPageTracker : SignUpPage
     , lockScroll : Bool
     , suggestedEmail : Maybe ( String, String, String )
+    , currentAccountTab : CurrentAccountTab
     }
 
 
 type SignUpPage
     = UserInfo
     | Terms
-    | CardConnect
+    | ManageAccount
+    | MiPayment
     | ContactInfo
 
 
 type State
     = Open
     | Closed
+
+
+type CurrentAccountTab
+    = CreateAccount
+    | Login
 
 
 type Msg
@@ -85,9 +93,12 @@ type Msg
     | UpdateZip String
     | UpdatePhone String
     | UpdateTerms Bool
+    | UpdatePassword String
     | LockScroll ()
     | NextSignUpView
     | FillCorrectEmail
+    | CreateAccountTab
+    | LoginTab
 
 
 type alias RouteParams =
@@ -154,10 +165,12 @@ init maybeUrl sharedModel static =
       , cityText = ""
       , zipText = ""
       , phoneText = ""
+      , passwordText = ""
       , termsAccepted = False
       , signupPageTracker = UserInfo
       , lockScroll = False
       , suggestedEmail = Nothing
+      , currentAccountTab = CreateAccount
       }
     , Cmd.none
     )
@@ -177,6 +190,12 @@ update maybeUrl key sharedModel static msg model =
         CloseSignUpView ->
             ( { model | signupView = Closed, signupPageTracker = UserInfo, lockScroll = False }, Cmd.none )
 
+        CreateAccountTab ->
+            ( { model | currentAccountTab = CreateAccount }, Cmd.none )
+
+        LoginTab ->
+            ( { model | currentAccountTab = Login }, Cmd.none )
+
         Back ->
             let
                 close =
@@ -186,10 +205,13 @@ update maybeUrl key sharedModel static msg model =
                 UserInfo ->
                     close
 
+                ManageAccount ->
+                    ( { model | signupPageTracker = UserInfo }, Cmd.none )
+
                 Terms ->
                     ( { model | termsAccepted = False, signupPageTracker = UserInfo }, Cmd.none )
 
-                CardConnect ->
+                MiPayment ->
                     ( { model | signupPageTracker = Terms }, Cmd.none )
 
                 ContactInfo ->
@@ -213,6 +235,9 @@ update maybeUrl key sharedModel static msg model =
         UpdateZip newZip ->
             ( { model | zipText = newZip }, Cmd.none )
 
+        UpdatePassword newPassword ->
+            ( { model | passwordText = newPassword }, Cmd.none )
+
         UpdatePhone newPhone ->
             ( { model | phoneText = contactPhone newPhone model.phoneText }, setPhoneCursor model.phoneText (contactPhone newPhone model.phoneText) )
 
@@ -227,13 +252,21 @@ update maybeUrl key sharedModel static msg model =
                 | signupPageTracker =
                     case model.signupPageTracker of
                         UserInfo ->
-                            Terms
+                            case model.currentAccountTab of
+                                CreateAccount ->
+                                    Terms
+
+                                Login ->
+                                    ManageAccount
+
+                        ManageAccount ->
+                            ManageAccount
 
                         Terms ->
-                            CardConnect
+                            MiPayment
 
-                        CardConnect ->
-                            CardConnect
+                        MiPayment ->
+                            MiPayment
 
                         ContactInfo ->
                             ContactInfo
@@ -357,7 +390,7 @@ landingView sharedModel model =
         }
         (case model.signupView of
             Open ->
-                inFront (Lazy.lazy3 signupView sharedModel model { logo = logo, footerArgs = footerArgs, primaryColor = white, secondaryColor = primaryColor }) :: defaultLayout
+                inFront (Lazy.lazy3 signupView sharedModel model { logo = logo, footerArgs = footerArgs, primaryColor = white, secondaryColor = primaryColor, currentAccountTab = model.currentAccountTab }) :: defaultLayout
 
             Closed ->
                 defaultLayout
@@ -489,6 +522,7 @@ signupView sharedModel model info =
                 , stateText = model.stateText
                 , cityText = model.cityText
                 , zipText = model.zipText
+                , passwordText = model.passwordText
                 , phoneText = model.phoneText
                 , suggestedEmail = model.suggestedEmail
                 , signupPageTracker = model.signupPageTracker
@@ -502,6 +536,16 @@ signupView sharedModel model info =
                 , nameIcon = user
                 , phone = "(720) 210 - 3668"
                 , phoneIcon = phoneSvg
+                , primaryColor = info.primaryColor
+                , secondaryColor = info.secondaryColor
+                , loginTabText = "Login"
+                , createTabText = "Create Account"
+                , manageAccountText = "Manage Account"
+                , cancelText = "Cancel Subscription"
+                , subscribeHeader = "Top real estate service from"
+                , priceText = "for $50"
+                , currentAccountTab = info.currentAccountTab
+                , logo = info.logo
                 }
             , nextButton
                 { primaryColor = info.primaryColor
@@ -517,6 +561,8 @@ signupView sharedModel model info =
                 , phoneText = model.phoneText
                 , termsAccepted = model.termsAccepted
                 , suggestedEmail = model.suggestedEmail
+                , currentAccountTab = model.currentAccountTab
+                , passwordText = model.passwordText
                 }
             ]
         , el [ alignBottom, width fill ] (footer info.footerArgs)
@@ -604,7 +650,14 @@ signupScroller info =
             else
                 p16
 
-        frame =
+        padnotTop =
+            if isPhone info.device then
+                p6notTop
+
+            else
+                p16notTop
+
+        forheadFrame =
             column
                 [ Background.color white
                 , pad
@@ -616,38 +669,159 @@ signupScroller info =
                 , Border.shadow { offset = ( 5, 10 ), size = 5, blur = 20, color = slate300 }
                 ]
 
+        frame =
+            column
+                [ Background.color white
+                , centerX
+                , width (fill |> maximum 800)
+                , Font.color slate700
+                , Border.rounded 20
+                , Border.shadow { offset = ( 5, 10 ), size = 5, blur = 20, color = slate300 }
+                ]
+
+        -- bool : b | true = left, false = right
+        cornerRadius b =
+            if b then
+                { topLeft = 20, topRight = 0, bottomLeft = 0, bottomRight = 0 }
+
+            else
+                { topLeft = 0, bottomLeft = 0, bottomRight = 0, topRight = 20 }
+
+        shadowOffset b =
+            if b then
+                ( -5, -5 )
+
+            else
+                ( 5, -5 )
+
+        display b =
+            htmlAttribute <|
+                Atr.style "display"
+                    (if b then
+                        "none"
+
+                     else
+                        "inherit"
+                    )
+
+        isLogin =
+            case info.currentAccountTab of
+                CreateAccount ->
+                    False
+
+                Login ->
+                    True
+
+        passiveTab msg txt b =
+            Input.button
+                [ width fill
+                , height (px 70)
+                , Background.color info.secondaryColor
+                , Font.color info.primaryColor
+                , Border.roundEach (cornerRadius b)
+                , Font.bold
+                , Border.innerShadow { offset = shadowOffset b, size = 3, blur = 10, color = aslate700 0.2 }
+                ]
+                { onPress = msg
+                , label = el [ centerY, centerX ] (text txt)
+                }
+
+        activeTab txt =
+            el [ width fill, Font.bold, centerX, centerY, Font.color info.secondaryColor, height (px 70) ] (el [ centerX, centerY ] (text txt))
+
         icon =
             [ width (px 40), Font.color primaryColor ]
     in
-    frame
+    (case info.signupPageTracker of
+        UserInfo ->
+            frame
+
+        ManageAccount ->
+            frame
+
+        _ ->
+            forheadFrame
+    )
         (case info.signupPageTracker of
             UserInfo ->
-                [ column [ width fill ]
-                    [ Input.email
-                        [ Font.color slate900
-                        , below
-                            (Input.button [ alignRight, text_xs, Font.color red500 ]
-                                { onPress = Just FillCorrectEmail
-                                , label =
-                                    text
-                                        (case info.suggestedEmail of
-                                            Just ( _, _, email ) ->
-                                                "Did you mean " ++ email ++ "?"
+                [ row [ width fill ]
+                    (case info.currentAccountTab of
+                        CreateAccount ->
+                            [ activeTab info.createTabText, passiveTab (Just LoginTab) info.loginTabText False ]
 
-                                            Nothing ->
-                                                ""
-                                        )
-                                }
+                        Login ->
+                            [ passiveTab (Just CreateAccountTab) info.createTabText True, activeTab info.loginTabText ]
+                    )
+                , column [ pad, s8, width fill ]
+                    [ column [ width fill ]
+                        [ Input.email
+                            [ Font.color slate900
+                            , below
+                                (Input.button [ alignRight, text_xs, Font.color red500 ]
+                                    { onPress = Just FillCorrectEmail
+                                    , label =
+                                        text
+                                            (case info.suggestedEmail of
+                                                Just ( _, _, email ) ->
+                                                    "Did you mean " ++ email ++ "?"
+
+                                                Nothing ->
+                                                    ""
+                                            )
+                                    }
+                                )
+                            ]
+                            { onChange = UpdateEmail, text = info.emailText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Email")) }
+                        ]
+                    , el [ display isLogin, width fill ] (Input.text [ Font.color slate900 ] { onChange = UpdateName, text = info.nameText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Name")) })
+                    , el [ display isLogin, width fill ] (Input.text [ Font.color slate900 ] { onChange = UpdatePhone, text = info.phoneText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Phone Number")) })
+                    , el [ display isLogin, width fill ] (Input.text [ Font.color slate900 ] { onChange = UpdateStreet, text = info.streetText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Street Address")) })
+                    , el [ display isLogin, width fill ] (Input.text [ Font.color slate900 ] { onChange = UpdateCity, text = info.cityText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "City")) })
+                    , el [ display isLogin, width fill ] (Input.text [ Font.color slate900 ] { onChange = UpdateState, text = info.stateText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "State")) })
+                    , el [ display isLogin, width fill ] (Input.text [ Font.color slate900 ] { onChange = UpdateZip, text = info.zipText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Zip Code")) })
+                    , (if isLogin then
+                        Input.currentPassword
+
+                       else
+                        Input.newPassword
+                      )
+                        [ Font.color
+                            (if isLogin then
+                                info.secondaryColor
+
+                             else
+                                slate900
                             )
                         ]
-                        { onChange = UpdateEmail, text = info.emailText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Email")) }
+                        { onChange = UpdatePassword, show = not isLogin, text = info.passwordText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Password")) }
                     ]
-                , Input.text [ Font.color slate900 ] { onChange = UpdateName, text = info.nameText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Name")) }
-                , Input.text [ Font.color slate900 ] { onChange = UpdatePhone, text = info.phoneText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Phone Number")) }
-                , Input.text [ Font.color slate900 ] { onChange = UpdateStreet, text = info.streetText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Street Address")) }
-                , Input.text [ Font.color slate900 ] { onChange = UpdateCity, text = info.cityText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "City")) }
-                , Input.text [ Font.color slate900 ] { onChange = UpdateState, text = info.stateText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "State")) }
-                , Input.text [ Font.color slate900 ] { onChange = UpdateZip, text = info.zipText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Zip Code")) }
+                ]
+
+            ManageAccount ->
+                [ activeTab info.manageAccountText
+                , column [ padnotTop, s8, centerX ]
+                    [ Input.button [ centerX ]
+                        { onPress = Just NextSignUpView
+                        , label =
+                            el
+                                [ Background.color white
+                                , Font.color red900
+                                , mouseOver
+                                    [ Font.color (fromRgb255 { red = 255, blue = 0, green = 0, alpha = 1 })
+                                    , Background.color slate100
+                                    , Border.innerShadow { offset = ( 5, 10 ), size = 5, blur = 20, color = slate300 }
+                                    ]
+                                , Transition.properties_
+                                    [ Transition.property "background-color" 800 []
+                                    , Transition.property "box-shadow" 800 []
+                                    , Transition.color 800 []
+                                    ]
+                                , p6
+                                , Border.rounded 10
+                                ]
+                                (text info.cancelText)
+                        }
+                    ]
                 ]
 
             Terms ->
@@ -658,8 +832,16 @@ signupScroller info =
                     Err errors ->
                         [ column [ Font.center, s8, centerX, Font.color red500 ] [ el [ centerX ] (text "View failed. Please contact website administrator."), el [ centerX ] (text errors) ] ]
 
-            CardConnect ->
-                [ paragraph [ Font.center ] [ text "This is a placeholder for the CardConnect iframe" ] ]
+            MiPayment ->
+                [ column [ centerX, s2 ]
+                    [ el [ centerX ] (text info.subscribeHeader)
+                    , el [ centerX, Font.bold, text_lg ] info.logo
+                    , row [ centerX ] [ text info.priceText, text "/mo" ]
+                    ]
+                , Input.text [ Font.color slate900 ] { onChange = UpdateName, text = info.nameText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Card Number")) }
+                , Input.text [ Font.color slate900 ] { onChange = UpdatePhone, text = info.phoneText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "MM / YY")) }
+                , Input.text [ Font.color slate900 ] { onChange = UpdateStreet, text = info.streetText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "CVC")) }
+                ]
 
             ContactInfo ->
                 [ column [ width fill, s16 ]
@@ -764,27 +946,35 @@ nextButton info =
         (case info.signupPageTracker of
             UserInfo ->
                 if
-                    String.length info.nameText
-                        >= 5
-                        && String.length info.emailText
-                        > 5
-                        && String.length info.streetText
-                        > 5
-                        && String.length info.cityText
-                        > 0
-                        && String.length info.zipText
-                        == 5
-                        && String.length info.stateText
-                        > 0
-                        && String.length info.phoneText
-                        == 20
-                        && info.suggestedEmail
-                        == Nothing
+                    case info.currentAccountTab of
+                        CreateAccount ->
+                            String.length info.nameText
+                                >= 5
+                                && String.length info.emailText
+                                > 5
+                                && String.length info.streetText
+                                > 5
+                                && String.length info.cityText
+                                > 0
+                                && String.length info.zipText
+                                == 5
+                                && String.length info.stateText
+                                > 0
+                                && String.length info.phoneText
+                                == 20
+                                && info.suggestedEmail
+                                == Nothing
+
+                        Login ->
+                            info.suggestedEmail == Nothing && not (String.isEmpty info.passwordText)
                 then
                     [ buttonRow [ activeButton "Continue" ] ]
 
                 else
                     [ buttonRow [ disabledButton "Continue" ] ]
+
+            ManageAccount ->
+                [ buttonRow [] ]
 
             Terms ->
                 let
@@ -842,8 +1032,8 @@ nextButton info =
                     ]
                 ]
 
-            CardConnect ->
-                []
+            MiPayment ->
+                [ buttonRow [ disabledButton "Subscribe" ] ]
 
             ContactInfo ->
                 [ buttonRow [] ]

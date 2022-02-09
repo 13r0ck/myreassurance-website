@@ -121,6 +121,10 @@ p6 =
     basefont * 1.5 |> round |> padding
 
 
+p6notTop =
+    basefont * 2 |> round |> (\p -> paddingEach { top = 0, bottom = p, left = p, right = p })
+
+
 p7 =
     basefont * 1.75 |> round |> padding
 
@@ -159,6 +163,10 @@ p14 =
 
 p16 =
     basefont * 4 |> round |> padding
+
+
+p16notTop =
+    basefont * 2 |> round |> (\p -> paddingEach { top = 0, bottom = p, left = p, right = p })
 
 
 p20 =
@@ -251,6 +259,10 @@ s24 =
 -- how to do this in elm-ui, so this just does Font.size for now, bundling spacing
 -- will have to come later.
 -- COLORS
+
+
+modifyAlpha newAlpha color =
+    color |> toRgb |> (\rgba -> fromRgb { red = rgba.red, green = rgba.green, blue = rgba.blue, alpha = newAlpha })
 
 
 ablack a =
