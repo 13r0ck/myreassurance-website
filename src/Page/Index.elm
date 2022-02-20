@@ -40,19 +40,13 @@ import Task
 import Utils.Transition as Transition
 import View exposing (View)
 import Wheel exposing (to255)
+import Html exposing (i)
+import Svg exposing (text_)
 
 
 type alias Model =
     { wheelPercentage : Int
     , signupView : State
-    , nameText : String
-    , emailText : String
-    , streetText : String
-    , stateText : String
-    , cityText : String
-    , zipText : String
-    , passwordText : String
-    , phoneText : String
     , termsAccepted : Bool
     , signupPageTracker : SignUpPage
     , lockScroll : Bool
@@ -60,12 +54,16 @@ type alias Model =
     , currentAccountTab : CurrentAccountTab
     }
 
+type alias PrimerDisplay =
+    { selectedHeader : String
+    , messages : List String
+    }
 
 type SignUpPage
-    = UserInfo
+    = PrimerOne
     | Terms
-    | ManageAccount
-    | MiPayment
+    | PrimerTwo
+    | PrimerThree
     | ContactInfo
 
 
@@ -84,21 +82,10 @@ type Msg
     | OpenSignUpView
     | OpenContactUs
     | CloseSignUpView
-    | Back
-    | UpdateName String
-    | UpdateEmail String
-    | UpdateStreet String
-    | UpdateCity String
-    | UpdateState String
-    | UpdateZip String
-    | UpdatePhone String
     | UpdateTerms Bool
-    | UpdatePassword String
+    | Back
     | LockScroll ()
     | NextSignUpView
-    | FillCorrectEmail
-    | CreateAccountTab
-    | LoginTab
 
 
 type alias RouteParams =
@@ -158,16 +145,8 @@ view maybeUrl sharedModel model static =
 init maybeUrl sharedModel static =
     ( { wheelPercentage = 0
       , signupView = Closed
-      , nameText = ""
-      , emailText = ""
-      , streetText = ""
-      , stateText = ""
-      , cityText = ""
-      , zipText = ""
-      , phoneText = ""
-      , passwordText = ""
       , termsAccepted = False
-      , signupPageTracker = UserInfo
+      , signupPageTracker = PrimerOne
       , lockScroll = False
       , suggestedEmail = Nothing
       , currentAccountTab = CreateAccount
@@ -181,6 +160,9 @@ update maybeUrl key sharedModel static msg model =
         WheelHover percentage ->
             ( { model | wheelPercentage = percentage }, Cmd.none )
 
+        UpdateTerms bool ->
+            ( { model | termsAccepted = bool }, Cmd.none )
+
         OpenSignUpView ->
             ( { model | signupView = Open }, Task.perform LockScroll (Process.sleep 500) )
 
@@ -188,106 +170,53 @@ update maybeUrl key sharedModel static msg model =
             ( { model | signupView = Open, signupPageTracker = ContactInfo }, Task.perform LockScroll (Process.sleep 500) )
 
         CloseSignUpView ->
-            ( { model | signupView = Closed, signupPageTracker = UserInfo, lockScroll = False }, Cmd.none )
-
-        CreateAccountTab ->
-            ( { model | currentAccountTab = CreateAccount }, Cmd.none )
-
-        LoginTab ->
-            ( { model | currentAccountTab = Login }, Cmd.none )
+            ( { model | signupView = Closed, signupPageTracker = PrimerOne, lockScroll = False }, Cmd.none )
 
         Back ->
             let
                 close =
-                    ( { model | signupView = Closed, signupPageTracker = UserInfo, lockScroll = False }, Cmd.none )
+                    ( { model | signupView = Closed, signupPageTracker = PrimerOne, lockScroll = False }, Cmd.none )
             in
             case model.signupPageTracker of
-                UserInfo ->
+                PrimerOne ->
                     close
-
-                ManageAccount ->
-                    ( { model | signupPageTracker = UserInfo }, Cmd.none )
-
-                Terms ->
-                    ( { model | termsAccepted = False, signupPageTracker = UserInfo }, Cmd.none )
-
-                MiPayment ->
-                    ( { model | signupPageTracker = Terms }, Cmd.none )
 
                 ContactInfo ->
                     close
 
-        UpdateName newName ->
-            ( { model | nameText = newName }, Cmd.none )
+                Terms ->
+                    ( { model | termsAccepted = False, signupPageTracker = PrimerOne }, Cmd.none )
 
-        UpdateEmail newEmail ->
-            ( { model | emailText = newEmail, suggestedEmail = Mailcheck.suggest newEmail }, Cmd.none )
+                PrimerTwo ->
+                    ( { model | termsAccepted = False, signupPageTracker = Terms }, Cmd.none )
 
-        UpdateStreet newStreet ->
-            ( { model | streetText = newStreet }, Cmd.none )
-
-        UpdateCity newCity ->
-            ( { model | cityText = newCity }, Cmd.none )
-
-        UpdateState newState ->
-            ( { model | stateText = newState }, Cmd.none )
-
-        UpdateZip newZip ->
-            ( { model | zipText = newZip }, Cmd.none )
-
-        UpdatePassword newPassword ->
-            ( { model | passwordText = newPassword }, Cmd.none )
-
-        UpdatePhone newPhone ->
-            ( { model | phoneText = contactPhone newPhone model.phoneText }, setPhoneCursor model.phoneText (contactPhone newPhone model.phoneText) )
+                PrimerThree ->
+                    ( { model | signupPageTracker = PrimerTwo }, Cmd.none )
 
         LockScroll _ ->
             ( { model | lockScroll = True }, Cmd.none )
-
-        UpdateTerms bool ->
-            ( { model | termsAccepted = bool }, Cmd.none )
 
         NextSignUpView ->
             ( { model
                 | signupPageTracker =
                     case model.signupPageTracker of
-                        UserInfo ->
-                            case model.currentAccountTab of
-                                CreateAccount ->
-                                    Terms
-
-                                Login ->
-                                    ManageAccount
-
-                        ManageAccount ->
-                            ManageAccount
+                        PrimerOne ->
+                            Terms
 
                         Terms ->
-                            MiPayment
+                            PrimerTwo
 
-                        MiPayment ->
-                            MiPayment
+                        PrimerTwo ->
+                            PrimerThree
+
+                        PrimerThree ->
+                            PrimerThree
 
                         ContactInfo ->
                             ContactInfo
               }
             , Cmd.none
             )
-
-        FillCorrectEmail ->
-            ( { model
-                | emailText =
-                    case model.suggestedEmail of
-                        Just ( _, _, email ) ->
-                            email
-
-                        Nothing ->
-                            model.emailText
-                , suggestedEmail = Nothing
-              }
-            , Cmd.none
-            )
-
 
 subscriptions maybeUrl routeParams path model =
     Sub.none
@@ -516,15 +445,7 @@ signupView sharedModel model info =
                 , device = sharedModel.device
                 }
             , signupScroller
-                { nameText = model.nameText
-                , emailText = model.emailText
-                , streetText = model.streetText
-                , stateText = model.stateText
-                , cityText = model.cityText
-                , zipText = model.zipText
-                , passwordText = model.passwordText
-                , phoneText = model.phoneText
-                , suggestedEmail = model.suggestedEmail
+                { suggestedEmail = model.suggestedEmail
                 , signupPageTracker = model.signupPageTracker
                 , fullDate = sharedModel.fullDate
                 , device = sharedModel.device
@@ -546,23 +467,20 @@ signupView sharedModel model info =
                 , priceText = "for $50"
                 , currentAccountTab = info.currentAccountTab
                 , logo = info.logo
+                , primerContent =
+                    [ { header = "Three Steps To Sign Up!", message = "Accept Terms and Conditions." }
+                    , { header = "Almost There!", message = "One time $99 setup."}
+                    , { header = "One More Time!", message = "Activate $50/mo subscription."}
+                    ]
                 }
             , nextButton
                 { primaryColor = info.primaryColor
                 , secondaryColor = info.secondaryColor
                 , signupPageTracker = model.signupPageTracker
                 , device = sharedModel.device
-                , emailText = model.emailText
-                , nameText = model.nameText
-                , streetText = model.streetText
-                , stateText = model.stateText
-                , cityText = model.cityText
-                , zipText = model.zipText
-                , phoneText = model.phoneText
                 , termsAccepted = model.termsAccepted
                 , suggestedEmail = model.suggestedEmail
                 , currentAccountTab = model.currentAccountTab
-                , passwordText = model.passwordText
                 }
             ]
         , el [ alignBottom, width fill ] (footer info.footerArgs)
@@ -657,21 +575,11 @@ signupScroller info =
             else
                 p16notTop
 
-        forheadFrame =
+        frame =
             column
                 [ Background.color white
                 , pad
                 , s8
-                , centerX
-                , width (fill |> maximum 800)
-                , Font.color slate700
-                , Border.rounded 20
-                , Border.shadow { offset = ( 5, 10 ), size = 5, blur = 20, color = slate300 }
-                ]
-
-        frame =
-            column
-                [ Background.color white
                 , centerX
                 , width (fill |> maximum 800)
                 , Font.color slate700
@@ -731,99 +639,45 @@ signupScroller info =
 
         icon =
             [ width (px 40), Font.color primaryColor ]
+
+        displayPrimer contentList index =
+            List.foldr
+                (\(i, step) merge ->
+                    if i == index
+                    then { merge | header = step.header, messages = step.message :: merge.messages }
+                    else { merge | messages = step.message :: merge.messages}
+                )
+                { header = "", messages = [] }
+                (List.indexedMap (\i content -> (i, content)) contentList)
+            |> (\mergedPrimers ->
+                [ el [centerX, text_md, Font.color info.secondaryColor, Font.bold] (text mergedPrimers.header)
+                , (if isTabletOrSmaller info.device then column else row) [s16, centerX] (List.indexedMap (\i message -> primer index i message) mergedPrimers.messages)
+                ]
+               )
+        primer index i message =
+            column [width fill, s4, alignTop]
+                [ el
+                    [ p8
+                    , Border.color info.secondaryColor
+                    , Border.width 4
+                    , Border.rounded 50
+                    , (if i > index then Border.dashed else Border.solid)
+                    , (if i < index then Background.color info.secondaryColor else Font.color info.secondaryColor)
+                    , (if i < index then Font.color info.primaryColor else Font.color info.secondaryColor)
+                    , centerX
+                    , inFront (el [centerX, centerY, Font.bold, text_md, Font.family [ Font.monospace ]] (String.fromInt (i + 1) |> text))
+                    ] (none)
+                , paragraph [Font.center] [text message]
+                ]
     in
-    (case info.signupPageTracker of
-        UserInfo ->
-            frame
-
-        ManageAccount ->
-            frame
-
-        _ ->
-            forheadFrame
-    )
+    frame
         (case info.signupPageTracker of
-            UserInfo ->
-                [ row [ width fill ]
-                    (case info.currentAccountTab of
-                        CreateAccount ->
-                            [ activeTab info.createTabText, passiveTab (Just LoginTab) info.loginTabText False ]
-
-                        Login ->
-                            [ passiveTab (Just CreateAccountTab) info.createTabText True, activeTab info.loginTabText ]
-                    )
-                , column [ pad, s8, width fill ]
-                    [ column [ width fill ]
-                        [ Input.email
-                            [ Font.color slate900
-                            , below
-                                (Input.button [ alignRight, text_xs, Font.color red500 ]
-                                    { onPress = Just FillCorrectEmail
-                                    , label =
-                                        text
-                                            (case info.suggestedEmail of
-                                                Just ( _, _, email ) ->
-                                                    "Did you mean " ++ email ++ "?"
-
-                                                Nothing ->
-                                                    ""
-                                            )
-                                    }
-                                )
-                            ]
-                            { onChange = UpdateEmail, text = info.emailText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Email")) }
-                        ]
-                    , el [ display isLogin, width fill ] (Input.text [ Font.color slate900 ] { onChange = UpdateName, text = info.nameText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Name")) })
-                    , el [ display isLogin, width fill ] (Input.text [ Font.color slate900 ] { onChange = UpdatePhone, text = info.phoneText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Phone Number")) })
-                    , el [ display isLogin, width fill ] (Input.text [ Font.color slate900 ] { onChange = UpdateStreet, text = info.streetText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Street Address")) })
-                    , el [ display isLogin, width fill ] (Input.text [ Font.color slate900 ] { onChange = UpdateCity, text = info.cityText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "City")) })
-                    , el [ display isLogin, width fill ] (Input.text [ Font.color slate900 ] { onChange = UpdateState, text = info.stateText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "State")) })
-                    , el [ display isLogin, width fill ] (Input.text [ Font.color slate900 ] { onChange = UpdateZip, text = info.zipText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Zip Code")) })
-                    , (if isLogin then
-                        Input.currentPassword
-
-                       else
-                        Input.newPassword
-                      )
-                        [ Font.color
-                            (if isLogin then
-                                info.secondaryColor
-
-                             else
-                                slate900
-                            )
-                        ]
-                        { onChange = UpdatePassword, show = not isLogin, text = info.passwordText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Password")) }
-                    ]
-                ]
-
-            ManageAccount ->
-                [ activeTab info.manageAccountText
-                , column [ padnotTop, s8, centerX ]
-                    [ Input.button [ centerX ]
-                        { onPress = Just NextSignUpView
-                        , label =
-                            el
-                                [ Background.color white
-                                , Font.color red900
-                                , mouseOver
-                                    [ Font.color (fromRgb255 { red = 255, blue = 0, green = 0, alpha = 1 })
-                                    , Background.color slate100
-                                    , Border.innerShadow { offset = ( 5, 10 ), size = 5, blur = 20, color = slate300 }
-                                    ]
-                                , Transition.properties_
-                                    [ Transition.property "background-color" 800 []
-                                    , Transition.property "box-shadow" 800 []
-                                    , Transition.color 800 []
-                                    ]
-                                , p6
-                                , Border.rounded 10
-                                ]
-                                (text info.cancelText)
-                        }
-                    ]
-                ]
-
+            PrimerOne ->
+                displayPrimer info.primerContent 0
+            PrimerTwo ->
+                displayPrimer info.primerContent 1
+            PrimerThree ->
+                displayPrimer info.primerContent 2
             Terms ->
                 case markdownView Agreement.agreement of
                     Ok rendered ->
@@ -831,17 +685,6 @@ signupScroller info =
 
                     Err errors ->
                         [ column [ Font.center, s8, centerX, Font.color red500 ] [ el [ centerX ] (text "View failed. Please contact website administrator."), el [ centerX ] (text errors) ] ]
-
-            MiPayment ->
-                [ column [ centerX, s2 ]
-                    [ el [ centerX ] (text info.subscribeHeader)
-                    , el [ centerX, Font.bold, text_lg ] info.logo
-                    , row [ centerX ] [ text info.priceText, text "/mo" ]
-                    ]
-                , Input.text [ Font.color slate900 ] { onChange = UpdateName, text = info.nameText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "Card Number")) }
-                , Input.text [ Font.color slate900 ] { onChange = UpdatePhone, text = info.phoneText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "MM / YY")) }
-                , Input.text [ Font.color slate900 ] { onChange = UpdateStreet, text = info.streetText, placeholder = Nothing, label = Input.labelAbove [] (el [ Font.bold, text_xs ] (text "CVC")) }
-                ]
 
             ContactInfo ->
                 [ column [ width fill, s16 ]
@@ -944,38 +787,6 @@ nextButton info =
     in
     column [ centerX, p8, width (fill |> maximum 450), s8 ]
         (case info.signupPageTracker of
-            UserInfo ->
-                if
-                    case info.currentAccountTab of
-                        CreateAccount ->
-                            String.length info.nameText
-                                >= 5
-                                && String.length info.emailText
-                                > 5
-                                && String.length info.streetText
-                                > 5
-                                && String.length info.cityText
-                                > 0
-                                && String.length info.zipText
-                                == 5
-                                && String.length info.stateText
-                                > 0
-                                && String.length info.phoneText
-                                == 20
-                                && info.suggestedEmail
-                                == Nothing
-
-                        Login ->
-                            info.suggestedEmail == Nothing && not (String.isEmpty info.passwordText)
-                then
-                    [ buttonRow [ activeButton "Continue" ] ]
-
-                else
-                    [ buttonRow [ disabledButton "Continue" ] ]
-
-            ManageAccount ->
-                [ buttonRow [] ]
-
             Terms ->
                 let
                     enabledShadow =
@@ -1032,11 +843,17 @@ nextButton info =
                     ]
                 ]
 
-            MiPayment ->
-                [ buttonRow [ disabledButton "Subscribe" ] ]
-
             ContactInfo ->
                 [ buttonRow [] ]
+
+            PrimerOne ->
+                [ buttonRow [ activeButton "Continue" ] ]
+
+            PrimerTwo ->
+                [ buttonRow [ activeButton "Continue" ] ]
+
+            PrimerThree ->
+                [ buttonRow [ activeButton "Continue" ] ]
         )
 
 
