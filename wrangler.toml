@@ -1,0 +1,6 @@
+account_id = ""
+name = "myreassurance"
+type = "webpack"
+workers_dev = true
+site = { bucket = "./public" }
+compatibility_date = "2022-02-19"
