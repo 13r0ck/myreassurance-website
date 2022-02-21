@@ -88,17 +88,22 @@ async function callStripeAPI(product) {
     // Cloudflare Workers use the Fetch API for their API requests.
     httpClient: Stripe.createFetchHttpClient()
   });
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: [{
-        price: product.price,
-        quantity: 1
-    }],
-    mode: product.mode,
-    success_url: product.success,
-    cancel_url: product.cancel,
-  });
-  return session
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+          price: product.price,
+          quantity: 1
+      }],
+      mode: product.mode,
+      success_url: product.success,
+      cancel_url: product.cancel,
+    });
+    return session
+  } catch (e) {
+    console.log(JSON.stringify(e))
+    return
+  }
 }
 
 const SETUP = {
