@@ -38,11 +38,15 @@ import Svgs exposing (..)
 import Tailwind exposing (..)
 import Task
 import Utils.Transition as Transition
+import Utils.HttpRequests as HttpRequests
 import View exposing (View)
 import Wheel exposing (to255)
 import Html exposing (i)
-import Svg exposing (text_)
+import Browser.Navigation as Navigation
 
+
+setupUtl = "http://127.0.0.1:8787/stripe/setup"
+activationUrl = "http://127.0.0.1:8787/stripe/activation"
 
 type alias Model =
     { wheelPercentage : Int
@@ -52,11 +56,6 @@ type alias Model =
     , lockScroll : Bool
     , suggestedEmail : Maybe ( String, String, String )
     , currentAccountTab : CurrentAccountTab
-    }
-
-type alias PrimerDisplay =
-    { selectedHeader : String
-    , messages : List String
     }
 
 type SignUpPage
@@ -156,6 +155,10 @@ init maybeUrl sharedModel static =
 
 
 update maybeUrl key sharedModel static msg model =
+    let
+        close =
+            ( { model | signupView = Closed, signupPageTracker = PrimerOne, lockScroll = False, termsAccepted = False }, Cmd.none )
+    in
     case msg of
         WheelHover percentage ->
             ( { model | wheelPercentage = percentage }, Cmd.none )
@@ -173,10 +176,6 @@ update maybeUrl key sharedModel static msg model =
             ( { model | signupView = Closed, signupPageTracker = PrimerOne, lockScroll = False }, Cmd.none )
 
         Back ->
-            let
-                close =
-                    ( { model | signupView = Closed, signupPageTracker = PrimerOne, lockScroll = False }, Cmd.none )
-            in
             case model.signupPageTracker of
                 PrimerOne ->
                     close
@@ -197,26 +196,17 @@ update maybeUrl key sharedModel static msg model =
             ( { model | lockScroll = True }, Cmd.none )
 
         NextSignUpView ->
-            ( { model
-                | signupPageTracker =
-                    case model.signupPageTracker of
-                        PrimerOne ->
-                            Terms
-
-                        Terms ->
-                            PrimerTwo
-
-                        PrimerTwo ->
-                            PrimerThree
-
-                        PrimerThree ->
-                            PrimerThree
-
-                        ContactInfo ->
-                            ContactInfo
-              }
-            , Cmd.none
-            )
+            case model.signupPageTracker of
+                PrimerOne ->
+                    ( { model | signupPageTracker = Terms }, Cmd.none )
+                PrimerTwo ->
+                    ( model, Navigation.load setupUrl )
+                PrimerThree ->
+                    ( model, Navigation.load activationUrl )
+                ContactInfo ->
+                    ( { model | signupPageTracker = ContactInfo }, Cmd.none )
+                Terms ->
+                    ( { model | signupPageTracker = PrimerTwo }, Cmd.none )
 
 subscriptions maybeUrl routeParams path model =
     Sub.none
