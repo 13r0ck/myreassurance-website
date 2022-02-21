@@ -1,10 +1,11 @@
 module Utils.HttpRequests exposing
-    ( postSetup
-    , postActivation
+    ( postActivation
+    , postSetup
     )
 
 import Http
 import Json.Decode as Decode
+
 
 postSetup msg =
     Http.post
@@ -12,6 +13,7 @@ postSetup msg =
         , body = Http.emptyBody
         , expect = Http.expectString msg
         }
+
 
 postActivation msg =
     Http.post

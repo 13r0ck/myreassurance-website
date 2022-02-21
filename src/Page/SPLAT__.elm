@@ -1,7 +1,8 @@
-module Page.Index exposing (Data, Model, Msg, page)
+module Page.SPLAT__ exposing (Data, Model, Msg, page)
 
 import Agreement exposing (agreement)
 import Browser.Events
+import Browser.Navigation as Navigation
 import Char exposing (isDigit)
 import DataSource exposing (DataSource)
 import Element exposing (..)
@@ -14,7 +15,7 @@ import Element.Lazy as Lazy
 import Element.Region as Region
 import Head
 import Head.Seo as Seo
-import Html exposing (br, div, iframe)
+import Html exposing (br, div, i, iframe)
 import Html.Attributes as Atr exposing (attribute, class, id, property, src)
 import Json.Encode as Encode
 import Mailcheck
@@ -27,6 +28,7 @@ import Page exposing (Page, StaticPayload)
 import Pages.PageUrl exposing (PageUrl)
 import Pages.Url
 import Palette exposing (isPhone, isTabletOrSmaller, text_sm)
+import Path
 import Ports
 import Process
 import Shared
@@ -37,16 +39,19 @@ import Simple.Transition as Transition
 import Svgs exposing (..)
 import Tailwind exposing (..)
 import Task
-import Utils.Transition as Transition
 import Utils.HttpRequests as HttpRequests
+import Utils.Transition as Transition
 import View exposing (View)
 import Wheel exposing (to255)
-import Html exposing (i)
-import Browser.Navigation as Navigation
 
 
-setupUtl = "http://127.0.0.1:8787/stripe/setup"
-activationUrl = "http://127.0.0.1:8787/stripe/activation"
+setupUrl =
+    "http://127.0.0.1:8787/stripe/setup"
+
+
+activationUrl =
+    "http://127.0.0.1:8787/stripe/activation"
+
 
 type alias Model =
     { wheelPercentage : Int
@@ -56,13 +61,17 @@ type alias Model =
     , lockScroll : Bool
     , suggestedEmail : Maybe ( String, String, String )
     , currentAccountTab : CurrentAccountTab
+    , animateSignUpView : Bool
     }
+
 
 type SignUpPage
     = PrimerOne
     | Terms
     | PrimerTwo
     | PrimerThree
+    | PrimerDone
+    | PrimerWarning
     | ContactInfo
 
 
@@ -88,13 +97,20 @@ type Msg
 
 
 type alias RouteParams =
-    {}
+    { splat : List String }
 
 
 page =
-    Page.single
+    Page.prerender
         { head = head
-        , data = data
+        , routes =
+            DataSource.succeed
+                [ { splat = [] }
+                , { splat = [ "setup-success" ] }
+                , { splat = [ "activation-success" ] }
+                , { splat = [ "activation-canceled" ] }
+                ]
+        , data = \_ -> data
         }
         |> Page.buildWithLocalState { view = view, init = init, update = update, subscriptions = subscriptions }
 
@@ -142,13 +158,35 @@ view maybeUrl sharedModel model static =
 
 
 init maybeUrl sharedModel static =
+    let
+        _ =
+            Debug.log "fuck" maybeUrl
+
+        pathRelativeValues =
+            Maybe.withDefault { signupPageTracker = PrimerOne, signupView = Closed, animateSignUpView = True }
+                (Maybe.map
+                    (\url ->
+                        case Path.toRelative url.path of
+                            "setup-success" ->
+                                { signupPageTracker = PrimerThree, signupView = Open, animateSignUpView = False }
+
+                            "activation-success" ->
+                                { signupPageTracker = PrimerTwo, signupView = Open, animateSignUpView = False }
+
+                            _ ->
+                                { signupPageTracker = PrimerDone, signupView = Closed, animateSignUpView = True }
+                    )
+                    maybeUrl
+                )
+    in
     ( { wheelPercentage = 0
-      , signupView = Closed
+      , signupView = pathRelativeValues.signupView
       , termsAccepted = False
-      , signupPageTracker = PrimerOne
+      , signupPageTracker = pathRelativeValues.signupPageTracker
       , lockScroll = False
       , suggestedEmail = Nothing
       , currentAccountTab = CreateAccount
+      , animateSignUpView = pathRelativeValues.animateSignUpView
       }
     , Cmd.none
     )
@@ -157,7 +195,7 @@ init maybeUrl sharedModel static =
 update maybeUrl key sharedModel static msg model =
     let
         close =
-            ( { model | signupView = Closed, signupPageTracker = PrimerOne, lockScroll = False, termsAccepted = False }, Cmd.none )
+            ( { model | signupView = Closed, signupPageTracker = PrimerOne, lockScroll = False, termsAccepted = False, animateSignUpView = True }, Cmd.none )
     in
     case msg of
         WheelHover percentage ->
@@ -167,13 +205,23 @@ update maybeUrl key sharedModel static msg model =
             ( { model | termsAccepted = bool }, Cmd.none )
 
         OpenSignUpView ->
-            ( { model | signupView = Open }, Task.perform LockScroll (Process.sleep 500) )
+            ( { model | signupView = Open }
+            , Task.perform LockScroll
+                (Process.sleep
+                    (if model.animateSignUpView then
+                        500
+
+                     else
+                        0
+                    )
+                )
+            )
 
         OpenContactUs ->
             ( { model | signupView = Open, signupPageTracker = ContactInfo }, Task.perform LockScroll (Process.sleep 500) )
 
         CloseSignUpView ->
-            ( { model | signupView = Closed, signupPageTracker = PrimerOne, lockScroll = False }, Cmd.none )
+            close
 
         Back ->
             case model.signupPageTracker of
@@ -192,6 +240,12 @@ update maybeUrl key sharedModel static msg model =
                 PrimerThree ->
                     ( { model | signupPageTracker = PrimerTwo }, Cmd.none )
 
+                PrimerDone ->
+                    close
+
+                PrimerWarning ->
+                    ( { model | signupPageTracker = PrimerWarning }, Cmd.none )
+
         LockScroll _ ->
             ( { model | lockScroll = True }, Cmd.none )
 
@@ -199,14 +253,25 @@ update maybeUrl key sharedModel static msg model =
             case model.signupPageTracker of
                 PrimerOne ->
                     ( { model | signupPageTracker = Terms }, Cmd.none )
+
                 PrimerTwo ->
                     ( model, Navigation.load setupUrl )
+
                 PrimerThree ->
                     ( model, Navigation.load activationUrl )
+
                 ContactInfo ->
                     ( { model | signupPageTracker = ContactInfo }, Cmd.none )
+
                 Terms ->
                     ( { model | signupPageTracker = PrimerTwo }, Cmd.none )
+
+                PrimerDone ->
+                    close
+
+                PrimerWarning ->
+                    ( { model | signupPageTracker = PrimerThree }, Cmd.none )
+
 
 subscriptions maybeUrl routeParams path model =
     Sub.none
@@ -410,7 +475,12 @@ landingView sharedModel model =
 signupView sharedModel model info =
     aCol
         (Animation.fromTo
-            { duration = 500
+            { duration =
+                if model.animateSignUpView then
+                    500
+
+                else
+                    0
             , options = []
             }
             [ Property.opacity 0 ]
@@ -459,8 +529,8 @@ signupView sharedModel model info =
                 , logo = info.logo
                 , primerContent =
                     [ { header = "Three Steps To Sign Up!", message = "Accept Terms and Conditions." }
-                    , { header = "Almost There!", message = "One time $99 setup."}
-                    , { header = "One More Time!", message = "Activate $50/mo subscription."}
+                    , { header = "Almost There!", message = "One time $99 setup." }
+                    , { header = "One More Time!", message = "Activate $50/mo subscription." }
                     ]
                 }
             , nextButton
@@ -632,42 +702,78 @@ signupScroller info =
 
         displayPrimer contentList index =
             List.foldr
-                (\(i, step) merge ->
-                    if i == index
-                    then { merge | header = step.header, messages = step.message :: merge.messages }
-                    else { merge | messages = step.message :: merge.messages}
+                (\( i, step ) merge ->
+                    if i == index then
+                        { merge | header = step.header, messages = step.message :: merge.messages }
+
+                    else
+                        { merge | messages = step.message :: merge.messages }
                 )
                 { header = "", messages = [] }
-                (List.indexedMap (\i content -> (i, content)) contentList)
-            |> (\mergedPrimers ->
-                [ el [centerX, text_md, Font.color info.secondaryColor, Font.bold] (text mergedPrimers.header)
-                , (if isTabletOrSmaller info.device then column else row) [s16, centerX] (List.indexedMap (\i message -> primer index i message) mergedPrimers.messages)
-                ]
-               )
+                (List.indexedMap (\i content -> ( i, content )) contentList)
+                |> (\mergedPrimers ->
+                        [ el [ centerX, text_md, Font.color info.secondaryColor, Font.bold ] (text mergedPrimers.header)
+                        , (if isTabletOrSmaller info.device then
+                            column
+
+                           else
+                            row
+                          )
+                            [ s16, centerX ]
+                            (List.indexedMap (\i message -> primer index i message) mergedPrimers.messages)
+                        ]
+                   )
+
         primer index i message =
-            column [width fill, s4, alignTop]
+            column [ width fill, s4, alignTop ]
                 [ el
                     [ p8
                     , Border.color info.secondaryColor
                     , Border.width 4
                     , Border.rounded 50
-                    , (if i > index then Border.dashed else Border.solid)
-                    , (if i < index then Background.color info.secondaryColor else Font.color info.secondaryColor)
-                    , (if i < index then Font.color info.primaryColor else Font.color info.secondaryColor)
+                    , if i > index then
+                        Border.dashed
+
+                      else
+                        Border.solid
+                    , if i < index then
+                        Background.color info.secondaryColor
+
+                      else
+                        Font.color info.secondaryColor
+                    , if i < index then
+                        Font.color info.primaryColor
+
+                      else
+                        Font.color info.secondaryColor
                     , centerX
-                    , inFront (el [centerX, centerY, Font.bold, text_md, Font.family [ Font.monospace ]] (String.fromInt (i + 1) |> text))
-                    ] (none)
-                , paragraph [Font.center] [text message]
+                    , inFront (el [ centerX, centerY, Font.bold, text_md, Font.family [ Font.monospace ] ] (String.fromInt (i + 1) |> text))
+                    ]
+                    none
+                , paragraph [ Font.center ] [ text message ]
                 ]
     in
     frame
         (case info.signupPageTracker of
             PrimerOne ->
                 displayPrimer info.primerContent 0
+
             PrimerTwo ->
                 displayPrimer info.primerContent 1
+
             PrimerThree ->
                 displayPrimer info.primerContent 2
+
+            PrimerDone ->
+                [ el [ Font.bold, Font.color info.secondaryColor, centerX ] (text "Account Created!")
+                , paragraph [ centerX, Font.center ] [ text "Welcome to Myreassurance! When you are ready, contact us to get everything you want from a top real estate agent." ]
+                ]
+
+            PrimerWarning ->
+                [ el [ Font.bold, Font.color red500, centerX, text_lg ] (text "Account Not Created!")
+                , paragraph [ centerX, Font.center ] [ text "Setup requires two charges. Please continue finish signing up!" ]
+                ]
+
             Terms ->
                 case markdownView Agreement.agreement of
                     Ok rendered ->
@@ -843,6 +949,12 @@ nextButton info =
                 [ buttonRow [ activeButton "Continue" ] ]
 
             PrimerThree ->
+                [ buttonRow [ activeButton "Continue" ] ]
+
+            PrimerDone ->
+                [ buttonRow [] ]
+
+            PrimerWarning ->
                 [ buttonRow [ activeButton "Continue" ] ]
         )
 
