@@ -159,9 +159,6 @@ view maybeUrl sharedModel model static =
 
 init maybeUrl sharedModel static =
     let
-        _ =
-            Debug.log "fuck" maybeUrl
-
         pathRelativeValues =
             Maybe.withDefault { signupPageTracker = PrimerOne, signupView = Closed, animateSignUpView = True }
                 (Maybe.map
