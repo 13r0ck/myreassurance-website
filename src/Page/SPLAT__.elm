@@ -46,11 +46,11 @@ import Wheel exposing (to255)
 
 
 setupUrl =
-    "https://myreassurance.regal.workers.dev/stripe/setup"
+    "https://myreassurance.com/stripe/setup"
 
 
 activationUrl =
-    "https://myreassurance.regal.workers.dev/stripe/activation"
+    "https://myreassurance.com/stripe/activation"
 
 
 type alias Model =
