@@ -108,7 +108,7 @@ page =
                 [ { splat = [] }
                 , { splat = [ "setup-success" ] }
                 , { splat = [ "activation-success" ] }
-                , { splat = [ "activation-canceled" ] }
+                , { splat = [ "activation-failed" ] }
                 ]
         , data = \_ -> data
         }
@@ -170,7 +170,7 @@ init maybeUrl sharedModel static =
                             "activation-success" ->
                                 { signupPageTracker = PrimerDone, signupView = Open, animateSignUpView = False }
 
-                            "activation-cancel" ->
+                            "activation-failed" ->
                                 { signupPageTracker = PrimerWarning, signupView = Open, animateSignUpView = False }
 
                             _ ->
@@ -238,7 +238,7 @@ update maybeUrl key sharedModel static msg model =
                     ( { model | termsAccepted = False, signupPageTracker = Terms }, Cmd.none )
 
                 PrimerThree ->
-                    ( { model | signupPageTracker = PrimerTwo }, Cmd.none )
+                    ( { model | signupPageTracker = PrimerWarning }, Cmd.none )
 
                 PrimerDone ->
                     close
