@@ -168,10 +168,13 @@ init maybeUrl sharedModel static =
                                 { signupPageTracker = PrimerThree, signupView = Open, animateSignUpView = False }
 
                             "activation-success" ->
-                                { signupPageTracker = PrimerTwo, signupView = Open, animateSignUpView = False }
+                                { signupPageTracker = PrimerOne, signupView = Open, animateSignUpView = False }
+
+                            "activation-cancel" ->
+                                { signupPageTracker = PrimerWarning, signupView = Open, animateSignUpView = False }
 
                             _ ->
-                                { signupPageTracker = PrimerDone, signupView = Closed, animateSignUpView = True }
+                                { signupPageTracker = PrimerOne, signupView = Closed, animateSignUpView = True }
                     )
                     maybeUrl
                 )
