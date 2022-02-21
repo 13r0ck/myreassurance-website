@@ -46,11 +46,11 @@ import Wheel exposing (to255)
 
 
 setupUrl =
-    "http://127.0.0.1:8787/stripe/setup"
+    "https://myreassurance.regal.workers.dev/stripe/setup"
 
 
 activationUrl =
-    "http://127.0.0.1:8787/stripe/activation"
+    "https://myreassurance.regal.workers.dev/stripe/activation"
 
 
 type alias Model =
@@ -168,7 +168,7 @@ init maybeUrl sharedModel static =
                                 { signupPageTracker = PrimerThree, signupView = Open, animateSignUpView = False }
 
                             "activation-success" ->
-                                { signupPageTracker = PrimerOne, signupView = Open, animateSignUpView = False }
+                                { signupPageTracker = PrimerDone, signupView = Open, animateSignUpView = False }
 
                             "activation-cancel" ->
                                 { signupPageTracker = PrimerWarning, signupView = Open, animateSignUpView = False }
