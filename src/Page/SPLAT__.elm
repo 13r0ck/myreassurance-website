@@ -529,7 +529,7 @@ signupView sharedModel model info =
                 , logo = info.logo
                 , primerContent =
                     [ { header = "Three Steps To Sign Up!", message = "Accept Terms and Conditions." }
-                    , { header = "Almost There!", message = "One time $99 Set-Up." }
+                    , { header = "Almost There!", message = "One time $99 Set\u{2011}Up." }
                     , { header = "One More Time!", message = "Activate $49/mo subscription." }
                     ]
                 }
