@@ -114,7 +114,7 @@ const SETUP = {
 }
 
 const ACTIVATION = {
-  price: "price_1KUyJ8KApNKktyeLFeE9yPj1",
+  price: "price_1KVpcgKApNKktyeLhUMsQ8wk",
   mode: "subscription",
   success: "https://myreassurance.com/activation-success",
   cancel: "https://myreassurance.com/activation-failed"
