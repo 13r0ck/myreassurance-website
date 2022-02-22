@@ -897,6 +897,7 @@ nextButton info =
                         \b ->
                             el
                                 [ width (px 50)
+                                , height (px 50)
                                 , centerY
                                 , Font.color
                                     (if b then
