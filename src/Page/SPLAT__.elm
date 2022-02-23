@@ -159,22 +159,36 @@ view maybeUrl sharedModel model static =
 
 init maybeUrl sharedModel static =
     let
+        primerPage =
+            { signupPageTracker = PrimerOne
+            , signupView = Open
+            , animateSignUpView = False
+            , lockScroll = True
+            }
+
+        primerPageDefault =
+            { signupPageTracker = PrimerOne
+            , signupView = Closed
+            , animateSignUpView = True
+            , lockScroll = False
+            }
+
         pathRelativeValues =
-            Maybe.withDefault { signupPageTracker = PrimerOne, signupView = Closed, animateSignUpView = True }
+            Maybe.withDefault primerPageDefault
                 (Maybe.map
                     (\url ->
                         case Path.toRelative url.path of
                             "setup-success" ->
-                                { signupPageTracker = PrimerThree, signupView = Open, animateSignUpView = False }
+                                { primerPage | signupPageTracker = PrimerThree }
 
                             "activation-success" ->
-                                { signupPageTracker = PrimerDone, signupView = Open, animateSignUpView = False }
+                                { primerPage | signupPageTracker = PrimerDone }
 
                             "activation-failed" ->
-                                { signupPageTracker = PrimerWarning, signupView = Open, animateSignUpView = False }
+                                { primerPage | signupPageTracker = PrimerWarning }
 
                             _ ->
-                                { signupPageTracker = PrimerOne, signupView = Closed, animateSignUpView = True }
+                                primerPageDefault
                     )
                     maybeUrl
                 )
@@ -183,7 +197,7 @@ init maybeUrl sharedModel static =
       , signupView = pathRelativeValues.signupView
       , termsAccepted = False
       , signupPageTracker = pathRelativeValues.signupPageTracker
-      , lockScroll = False
+      , lockScroll = pathRelativeValues.lockScroll
       , suggestedEmail = Nothing
       , currentAccountTab = CreateAccount
       , animateSignUpView = pathRelativeValues.animateSignUpView
@@ -499,8 +513,18 @@ signupView sharedModel model info =
             }
         , column [ centerX, p8, s8 ]
             [ signUpTitle
-                { title = "Create Your Account"
-                , subTitle = "Be one of the first 100 to sign up!"
+                { title =
+                    if model.signupPageTracker == PrimerDone then
+                        ""
+
+                    else
+                        "Create Your Account"
+                , subTitle =
+                    if model.signupPageTracker == PrimerDone then
+                        ""
+
+                    else
+                        "Be one of the first 100 to sign up!"
                 , tracker = model.signupPageTracker
                 , device = sharedModel.device
                 }
@@ -529,9 +553,11 @@ signupView sharedModel model info =
                 , logo = info.logo
                 , primerContent =
                     [ { header = "Three Steps To Sign Up!", message = "Accept Terms and Conditions." }
-                    , { header = "Almost There!", message = "One time $99 Set\u{2011}Up." }
+                    , { header = "Almost There!", message = "One time $99 Set‑Up." }
                     , { header = "One More Time!", message = "Activate $49/mo subscription." }
                     ]
+                , activation_success_header = "Account Created!"
+                , activation_success_text = "Welcome to MyREassurance! We look forward to serving your real estate needs. Please call, text or email at anytime for questions about your subscription."
                 }
             , nextButton
                 { primaryColor = info.primaryColor
@@ -647,56 +673,6 @@ signupScroller info =
                 , Border.shadow { offset = ( 5, 10 ), size = 5, blur = 20, color = slate300 }
                 ]
 
-        -- bool : b | true = left, false = right
-        cornerRadius b =
-            if b then
-                { topLeft = 20, topRight = 0, bottomLeft = 0, bottomRight = 0 }
-
-            else
-                { topLeft = 0, bottomLeft = 0, bottomRight = 0, topRight = 20 }
-
-        shadowOffset b =
-            if b then
-                ( -5, -5 )
-
-            else
-                ( 5, -5 )
-
-        display b =
-            htmlAttribute <|
-                Atr.style "display"
-                    (if b then
-                        "none"
-
-                     else
-                        "inherit"
-                    )
-
-        isLogin =
-            case info.currentAccountTab of
-                CreateAccount ->
-                    False
-
-                Login ->
-                    True
-
-        passiveTab msg txt b =
-            Input.button
-                [ width fill
-                , height (px 70)
-                , Background.color info.secondaryColor
-                , Font.color info.primaryColor
-                , Border.roundEach (cornerRadius b)
-                , Font.bold
-                , Border.innerShadow { offset = shadowOffset b, size = 3, blur = 10, color = aslate700 0.2 }
-                ]
-                { onPress = msg
-                , label = el [ centerY, centerX ] (text txt)
-                }
-
-        activeTab txt =
-            el [ width fill, Font.bold, centerX, centerY, Font.color info.secondaryColor, height (px 70) ] (el [ centerX, centerY ] (text txt))
-
         icon =
             [ width (px 40), Font.color primaryColor ]
 
@@ -765,8 +741,10 @@ signupScroller info =
                 displayPrimer info.primerContent 2
 
             PrimerDone ->
-                [ el [ Font.bold, Font.color info.secondaryColor, centerX ] (text "Account Created!")
-                , paragraph [ centerX, Font.center ] [ text "Welcome to Myreassurance! When you are ready, contact us to get everything you want from a top real estate agent." ]
+                [ el [ Font.bold, Font.color info.secondaryColor, centerX ] (text info.activation_success_header)
+                , paragraph [ centerX, Font.center ] [ text info.activation_success_text ]
+                , link [ centerX ] { url = "mailto:" ++ info.email, label = row [ s4 ] [ el icon info.emailIcon, text info.email ] }
+                , link [ centerX ] { url = "tele:" ++ info.phone, label = row [ s4 ] [ el icon info.phoneIcon, text info.phone ] }
                 ]
 
             PrimerWarning ->
