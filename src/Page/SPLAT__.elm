@@ -45,6 +45,10 @@ import View exposing (View)
 import Wheel exposing (to255)
 
 
+preventSignUp = True
+
+firstSignUpPage = if preventSignUp then SignUpFrozen else PrimerOne
+
 setupUrl =
     "https://myreassurance.com/stripe/setup"
 
@@ -66,7 +70,8 @@ type alias Model =
 
 
 type SignUpPage
-    = PrimerOne
+    = SignUpFrozen
+    | PrimerOne
     | Terms
     | PrimerTwo
     | PrimerThree
@@ -160,14 +165,14 @@ view maybeUrl sharedModel model static =
 init maybeUrl sharedModel static =
     let
         primerPage =
-            { signupPageTracker = PrimerOne
+            { signupPageTracker = firstSignUpPage
             , signupView = Open
             , animateSignUpView = False
             , lockScroll = True
             }
 
         primerPageDefault =
-            { signupPageTracker = PrimerOne
+            { signupPageTracker = firstSignUpPage
             , signupView = Closed
             , animateSignUpView = True
             , lockScroll = False
@@ -209,7 +214,7 @@ init maybeUrl sharedModel static =
 update maybeUrl key sharedModel static msg model =
     let
         close =
-            ( { model | signupView = Closed, signupPageTracker = PrimerOne, lockScroll = False, termsAccepted = False, animateSignUpView = True }, Cmd.none )
+            ( { model | signupView = Closed, signupPageTracker = firstSignUpPage, lockScroll = False, termsAccepted = False, animateSignUpView = True }, Cmd.none )
     in
     case msg of
         WheelHover percentage ->
@@ -239,6 +244,9 @@ update maybeUrl key sharedModel static msg model =
 
         Back ->
             case model.signupPageTracker of
+                SignUpFrozen ->
+                    close
+                    
                 PrimerOne ->
                     close
 
@@ -265,6 +273,9 @@ update maybeUrl key sharedModel static msg model =
 
         NextSignUpView ->
             case model.signupPageTracker of
+                SignUpFrozen ->
+                    close
+
                 PrimerOne ->
                     ( { model | signupPageTracker = Terms }, Cmd.none )
 
@@ -514,13 +525,13 @@ signupView sharedModel model info =
         , column [ centerX, p8, s8 ]
             [ signUpTitle
                 { title =
-                    if model.signupPageTracker == PrimerDone then
+                    if model.signupPageTracker == PrimerDone || model.signupPageTracker == SignUpFrozen then
                         ""
 
                     else
                         "Create Your Account"
                 , subTitle =
-                    if model.signupPageTracker == PrimerDone then
+                    if model.signupPageTracker == PrimerDone || model.signupPageTracker == SignUpFrozen then
                         ""
 
                     else
@@ -550,6 +561,14 @@ signupView sharedModel model info =
                 , subscribeHeader = "Top real estate service from"
                 , priceText = "for $50"
                 , currentAccountTab = info.currentAccountTab
+                , frozenText =
+                    { title = "Oh No!"
+                    , paragraph = "Please check back on October 1st 2022 when our pilot program has ended and we will begin enrollment for the general public!"
+                    }
+                , warning =
+                    { title = "Account Not Created!"
+                    , paragraph = "Setup requires two charges. Please continue finish signing up!" 
+                    }
                 , logo = info.logo
                 , primerContent =
                     [ { header = "Three Steps To Sign Up!", message = "Accept Terms and Conditions." }
@@ -731,6 +750,11 @@ signupScroller info =
     in
     frame
         (case info.signupPageTracker of
+            SignUpFrozen ->
+                [ el [ Font.bold, Font.color info.secondaryColor, centerX, text_lg ] (text info.frozenText.title)
+                , paragraph [ centerX, Font.center ] [ text info.frozenText.paragraph ]
+                ]
+
             PrimerOne ->
                 displayPrimer info.primerContent 0
 
@@ -748,8 +772,8 @@ signupScroller info =
                 ]
 
             PrimerWarning ->
-                [ el [ Font.bold, Font.color red500, centerX, text_lg ] (text "Account Not Created!")
-                , paragraph [ centerX, Font.center ] [ text "Setup requires two charges. Please continue finish signing up!" ]
+                [ el [ Font.bold, Font.color red500, centerX, text_lg ] (text info.warning.title)
+                , paragraph [ centerX, Font.center ] [ text info.warning.paragraph ]
                 ]
 
             Terms ->
@@ -919,6 +943,9 @@ nextButton info =
                 ]
 
             ContactInfo ->
+                [ buttonRow [] ]
+
+            SignUpFrozen ->
                 [ buttonRow [] ]
 
             PrimerOne ->

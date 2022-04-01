@@ -8,6 +8,12 @@ then copy `./dist/*` into `./public` in the `workers` branch.
 Publishing instructions to cloudflare workers is in the `workers` README.md
 branch.
 
+## Pause Sign-Ups
+Change `preventSignUp` to `True`/`False` and application logic will update
+to link the call to action button on the gome page to a temporary page.
+You will also have to update the message for that page depending on the
+reason that the sign ups are frozen. Then Follow `How to Publish` above.
+
 ## Run locally
 using `npm start`
 
