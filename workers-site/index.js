@@ -107,14 +107,14 @@ async function callStripeAPI(product) {
 }
 
 const SETUP = {
-  price: "price_1KUyHeKApNKktyeLRN50HqQL",
+  price: "price_1Lz9BFKApNKktyeLF1Ph1BgR",
   mode: "payment",
   success: "https://myreassurance.com/setup-success",
   cancel: "https://myreassurance.com"
 }
 
 const ACTIVATION = {
-  price: "price_1KVpcgKApNKktyeLhUMsQ8wk",
+  price: "price_1Lz9BgKApNKktyeLVcNm99jK",
   mode: "subscription",
   success: "https://myreassurance.com/activation-success",
   cancel: "https://myreassurance.com/activation-failed"
