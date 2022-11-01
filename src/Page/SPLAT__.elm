@@ -114,6 +114,7 @@ page =
                 , { splat = [ "setup-success" ] }
                 , { splat = [ "activation-success" ] }
                 , { splat = [ "activation-failed" ] }
+                , { splat = [ "terms" ] }
                 ]
         , data = \_ -> data
         }
@@ -191,6 +192,9 @@ init maybeUrl sharedModel static =
 
                             "activation-failed" ->
                                 { primerPage | signupPageTracker = PrimerWarning }
+
+                            "terms" ->
+                                { primerPage | signupPageTracker = Terms }
 
                             _ ->
                                 primerPageDefault
@@ -933,7 +937,7 @@ nextButton info =
                     , onChange = UpdateTerms
                     }
                 , buttonRow
-                    [ if info.termsAccepted then
+                    [ if info.termsAccepted && not preventSignUp then
                         activeButton consentButtonText
 
                       else
