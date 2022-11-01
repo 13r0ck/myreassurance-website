@@ -361,8 +361,8 @@ landingView sharedModel model =
             el [ p16 ] none
 
         bottomText =
-            { title = "Membership and services are only being offered to the first 100 of our select clientele to sign up."
-            , content = [ "Don’t miss you chance to be among the first to claim your spot for this amazing cost savings opportunity and sign up TODAY!" ]
+            { title = ""
+            , content = [ "" ]
             }
 
         secondSectionPoints =
@@ -426,7 +426,6 @@ landingView sharedModel model =
                 , content =
                     [ "Save money and recive top tier service!"
                     , "Cheaper than any ibuyer or discount broker in the market today! Never pay a listing commision EVER!"
-                    , "Membership and services are only being offered to the first 100 of our select clientele to sign up. Don’t miss you chance to be among the first to claim your spot for this amazing cost savings opportunity and sign up TODAY!"
                     ]
                 , viewportWidth = viewportWidth
                 , viewportHeight = viewportHeight
@@ -453,7 +452,7 @@ landingView sharedModel model =
                       }
                     , { title = "We are revolutionizing real estate."
                       , content =
-                            [ "Low monthly subscription fee of only $49 a month and a one-time activation fee of $99."
+                            [ "Low monthly subscription fee of only $99 a month and a one-time activation fee of $199."
                             , "Two commission free sales is an estimated minimum savings of $20,000!"
                             , "Potentially much more depending on the sales price of your home!"
                             ]
@@ -562,8 +561,8 @@ signupView sharedModel model info =
                 , priceText = "for $50"
                 , currentAccountTab = info.currentAccountTab
                 , frozenText =
-                    { title = "Oh No!"
-                    , paragraph = "Please check back on October 1st 2022 when our pilot program has ended and we will begin enrollment for the general public!"
+                    { title = "Check Back Soon!"
+                    , paragraph = "Enrollment begins November 28th 2022"
                     }
                 , warning =
                     { title = "Account Not Created!"
@@ -572,8 +571,8 @@ signupView sharedModel model info =
                 , logo = info.logo
                 , primerContent =
                     [ { header = "Three Steps To Sign Up!", message = "Accept Terms and Conditions." }
-                    , { header = "Almost There!", message = "One time $99 Set‑Up." }
-                    , { header = "One More Time!", message = "Activate $49/mo subscription." }
+                    , { header = "Almost There!", message = "One time $199 Set‑Up." }
+                    , { header = "One More Time!", message = "Activate $99/mo subscription." }
                     ]
                 , activation_success_header = "Account Created!"
                 , activation_success_text = "Welcome to MyREassurance! We look forward to serving your real estate needs. Please call, text or email at anytime for questions about your subscription."
