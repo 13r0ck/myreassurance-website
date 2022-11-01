@@ -538,7 +538,7 @@ signupView sharedModel model info =
                         ""
 
                     else
-                        "Be one of the first 100 to sign up!"
+                        ""
                 , tracker = model.signupPageTracker
                 , device = sharedModel.device
                 }
