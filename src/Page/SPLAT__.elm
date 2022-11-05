@@ -376,7 +376,7 @@ landingView sharedModel model =
               }
             , { title = "The lowest cost way to sell real estate on the market today!"
               , content =
-                    [ "Only $99 to start and sell two properties within two years."
+                    [ "Only $199 to start and sell two properties within two years."
                     , "No limit on the sales price of your home."
                     ]
               }
