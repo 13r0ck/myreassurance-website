@@ -467,7 +467,7 @@ landingView sharedModel model =
                 , device = device
                 }
             , video
-                { url = "https://player.vimeo.com/video/646433917?h=3bc158f046"
+                { url = "https://player.vimeo.com/video/767341388?h=0341bedc96"
                 , viewportWidth = toFloat sharedModel.viewportWidth
                 , device = sharedModel.device
                 }
