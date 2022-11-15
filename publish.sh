@@ -16,7 +16,7 @@ if git status | grep -q "Your branch is up to date with 'origin/main'"; then
 	git checkout main
 	git reset --hard
 	git clean -fd
-	rm /tmp/dist
+	rm /tmp/dist -rf
 else
 	echo Not all changes have been commited. You probably need to push your commits to main.
 	echo Run 'git status' for more information.
