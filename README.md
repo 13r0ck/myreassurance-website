@@ -3,6 +3,9 @@
 :construction_worker: the webpage isn't quite done yet.
 
 ## How to publish
+run `./publish.sh` on a linux machine.
+
+Or manually:
 The server code is in the `workers` branch. Run `npm run-script build` here
 then copy `./dist/*` into `./public` in the `workers` branch.
 Publishing instructions to cloudflare workers is in the `workers` README.md
