@@ -566,7 +566,7 @@ signupView sharedModel model info =
                 , currentAccountTab = info.currentAccountTab
                 , frozenText =
                     { title = "Check Back Soon!"
-                    , paragraph = "Enrollment begins November 28th 2022"
+                    , paragraph = "Please click 'Contact Us' below."
                     }
                 , warning =
                     { title = "Account Not Created!"
