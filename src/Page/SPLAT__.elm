@@ -45,7 +45,7 @@ import View exposing (View)
 import Wheel exposing (to255)
 
 
-preventSignUp = False
+preventSignUp = True
 
 firstSignUpPage = if preventSignUp then SignUpFrozen else PrimerOne
 
