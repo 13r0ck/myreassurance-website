@@ -1,5 +1,11 @@
 #! /bin/bash
 
+wrangler whoami
+if [ "$?" == "1" ]; then
+  echo Wrangler may not be installed, or wrangler may not be logged in.
+  exit
+fi
+
 if git status | grep -q "Your branch is up to date with 'origin/main'"; then
 	git push origin main
 	main_hash=$(git log -n 1 --pretty=format:"%H")
